@@ -634,8 +634,43 @@ function verificarLimiteArmazenamentoLocal(dadosParaSalvar) {
     return true; // Liberado para salvar
 }
 
+// Configura dinamicamente se o app lerá/escreverá no Firebase ou no Drive do usuário
+function configurarCaminhosDeArmazenamento() {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+
+    if (storageProvider === 'drive') {
+        // Modo Drive: A URL de fallback do Firebase não será usada para mídias
+        // Vamos guardar os dados localmente na memória (array database) e sincronizar com o Drive
+        console.log("StreamHub: Modo Nuvem Particular (Google Drive) Ativado.");
+    } else {
+        // Modo Local: Aponta para o nó exclusivo por UID no seu Realtime Database
+        CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${user.uid}/midias.json`;
+        console.log("StreamHub: Modo Servidor Local Ativado. Limite: 500KB.");
+    }
+    
+    // Independentemente da escolha de mídias, a API Key do YouTube e a inicialização continuam
+    CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"; 
+    initApp();
+}
+
+
 async function empurrarBancoIntegralParaServidor() {
     const loteLimpoParaSalvar = database.map(({idFirebase, ...resto}) => resto);
+    
+    // 1. Se o armazenamento for no Google Drive, desvia o salvamento para lá (trataremos a API na Etapa 3)
+    if (storageProvider === 'drive') {
+        console.log("Sincronizando acervo com o Google Drive...");
+        // Chamar a função do drive aqui na etapa 3
+        return; 
+    }
+    
+    // 2. Se for no Servidor Local, valida o limite de 500KB antes de enviar
+    if (!verificarLimiteArmazenamentoLocal(loteLimpoParaSalvar)) {
+        throw new Error("Gravação abortada: Limite de 500KB excedido.");
+    }
+
+    // 3. Executa o salvamento padrão no Firebase Realtime Database
     let resposta = await fetch(CONFIG.FIREBASE_URL, { method: "PUT", body: JSON.stringify(loteLimpoParaSalvar), headers: { 'Content-Type': 'application/json' } });
     if (!resposta.ok) throw new Error("Erro na gravação remota do banco.");
 }
