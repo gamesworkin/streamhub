@@ -22,12 +22,12 @@ const USERS_DATABASE = {
     "diego@midias.com": { 
         defaultColor: "#11ffcf",
         firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
-        ytApiKey: "AIzaSyDf9du6bf1zCxKtaeluT671ywLKJEorGmg"
+        ytApiKey: "AIzaSyDHkLh2vGgxUJpVo11o1kKqtH1DQ5Toeu4"
     },
     "diego@albuns.com": { 
         defaultColor: "#ff0000",
         firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/albuns.json",
-        ytApiKey: "AIzaSyDf9du6bf1zCxKtaeluT671ywLKJEorGmg"
+        ytApiKey: "AIzaSyDHkLh2vGgxUJpVo11o1kKqtH1DQ5Toeu4"
     },
 };
 
