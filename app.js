@@ -772,11 +772,11 @@ async function salvarArquivoNoGoogleDrive(token, criarNovo = false) {
             });
         } else {
             const boundary = "foo_bar_baz";
-            const metadata = { name: "streamhub_data.json", parents: ["appDataFolder"] };
             
+            // Formatando estritamente os quebras de linha exigidos pelo protocolo Multipart do Google
             const multipartBody = 
-                `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}` +
-                `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${dadosParaSalvar}\r\n--${boundary}--`;
+                `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name: "streamhub_data.json", parents: ["appDataFolder"] })}\r\n` +
+                `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${dadosParaSalvar}\r\n--${boundary}--\r\n`;
 
             resposta = await fetch(url, {
                 method: method,
@@ -790,14 +790,16 @@ async function salvarArquivoNoGoogleDrive(token, criarNovo = false) {
             }
         }
 
-        if (!resposta.ok) throw new Error("Falha no upload para o Drive.");
+        if (!resposta.ok) {
+            const erroTxt = await resposta.text();
+            throw new Error(erroTxt || "Falha no servidor da API do Google.");
+        }
         console.log("Acervo sincronizado com o Google Drive com sucesso!");
     } catch (err) {
         console.error("Erro ao salvar no Google Drive:", err);
-        alert("Erro ao salvar mudanças na nuvem do Google Drive.");
+        alert("Erro ao salvar mudanças na nuvem do Google Drive. Verifique as permissões de desenvolvedor no console do Google Cloud.");
     }
 }
-
 
 function inicializarSeletorCoresLinear() {
     const bar = document.getElementById('color-spectrum-bar'); const selector = document.getElementById('color-spectrum-selector'); if (!bar || !selector) return;
@@ -843,7 +845,8 @@ function setupEventListeners() {
     document.addEventListener('click', async (e) => {
         // --- NAVEGAÇÃO SUPERIOR ---
         if (e.target.closest('#toggle-sidebar')) handleToggleSidebar();
-                // --- INTERAÇÃO COM O MODAL DE ARMAZENAMENTO HÍBRIDO ---
+        
+        // --- INTERAÇÃO COM O MODAL DE ARMAZENAMENTO HÍBRIDO ---
         if (e.target.closest('#opt-storage-drive')) {
             storageSelectedOptionProvisoria = 'drive';
             document.getElementById('opt-storage-drive').classList.add('selected-drive');
@@ -864,11 +867,7 @@ function setupEventListeners() {
             e.preventDefault();
             storageProvider = storageSelectedOptionProvisoria;
             document.getElementById('storage-modal').classList.add('hidden');
-            
-            // Salva a decisão do usuário no localStorage para não perguntar de novo nesta máquina
             localStorage.setItem(`streamhub_storage_choice_${currentUser}`, storageProvider);
-            
-            // Inicializa as urls baseadas na escolha
             configurarCaminhosDeArmazenamento();
         }
 
@@ -879,19 +878,17 @@ function setupEventListeners() {
             const row = document.getElementById('mobile-search-row');
             if(row) { row.classList.toggle('hidden'); if(!row.classList.contains('hidden')) document.getElementById('search-yt-input-mobile').focus(); }
         }
-        // --- NOVO: LOGIN COM O GOOGLE ---
-                // --- LOGIN COM O GOOGLE + PERMISSÃO DO GOOGLE DRIVE ---
+
+        // --- LOGIN COM O GOOGLE + PERMISSÃO DO GOOGLE DRIVE ---
         if (e.target.closest('#btn-google-login')) {
             const btnGoogle = e.target.closest('#btn-google-login');
             btnGoogle.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
             btnGoogle.disabled = true;
 
-            // Define o escopo para ler/escrever APENAS na pasta oculta de dados do próprio app no Drive do usuário
             googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
 
             firebase.auth().signInWithPopup(googleProvider)
                 .then((result) => {
-                    // Captura e salva o Token de Acesso temporário da API do Google
                     const credential = result.credential;
                     const token = credential.accessToken;
                     localStorage.setItem(`streamhub_drive_token_${result.user.email.toLowerCase()}`, token);
@@ -910,12 +907,10 @@ function setupEventListeners() {
         }
         if (e.target.closest('#btn-close-admin')) document.getElementById('admin-modal')?.classList.add('hidden');
         
-        // Clicar nas abas
         if (e.target.closest('#tab-trigger-add')) switchTabs('add-tab', 'tab-trigger-add');
         if (e.target.closest('#tab-trigger-channel')) switchTabs('channel-tab', 'tab-trigger-channel');
         if (e.target.closest('#tab-trigger-manage')) { switchTabs('manage-tab', 'tab-trigger-manage'); renderCrudManager(); }
 
-        // Botões de ação dentro do Admin
         if (e.target.closest('#btn-save-media')) saveMediaToDatabase(e);
         if (e.target.closest('#btn-submit-edit-media')) saveAdvancedEditChanges(e);
         if (e.target.closest('#btn-cancel-edit-media') || e.target.closest('#btn-cancel-edit-media-2')) {
@@ -925,10 +920,8 @@ function setupEventListeners() {
             const catDestino = document.getElementById("channel-target-category")?.value; 
             if(!canalSelecionadoProvisorio || !catDestino) return alert("Selecione um canal e uma categoria.");
             try {
-                                const payload = { channelId: canalSelecionadoProvisorio.channelId, uploadsPlaylistId: canalSelecionadoProvisorio.channelId.replace(/^UC/, "UU"), title: canalSelecionadoProvisorio.title, thumb: canalSelecionadoProvisorio.thumb };
+                const payload = { channelId: canalSelecionadoProvisorio.channelId, uploadsPlaylistId: canalSelecionadoProvisorio.channelId.replace(/^UC/, "UU"), title: canalSelecionadoProvisorio.title, thumb: canalSelecionadoProvisorio.thumb };
                 const nodeName = btoa(unescape(encodeURIComponent(catDestino))).replace(/=/g, "");
-                
-                // Agora monta a URL correta e individualizada baseada no nó do usuário
                 let urlCanalIndividual = obterUrlBaseCanais().replace(".json", `/${nodeName}.json`);
                 await fetch(urlCanalIndividual, { method: "PUT", body: JSON.stringify(payload) });
                 alert("Canal vinculado!"); document.getElementById("channel-preview").style.display = "none"; document.getElementById('search-channel-input').value = "";
@@ -956,7 +949,7 @@ function setupEventListeners() {
             if(currentUser) { localStorage.removeItem(`streamhub_theme_${currentUser}`); let c = USERS_DATABASE[currentUser] ? USERS_DATABASE[currentUser].defaultColor : "#ff0000"; aplicarCorTema(c); posicionarSetaPelaCor(c); }
         }
 
-                // --- CONTROLES DO PLAYER ---
+        // --- CONTROLES DO PLAYER ---
         if (e.target.closest('#btn-next-track')) { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }
         if (e.target.closest('#btn-prev-track')) { if(currentTrackIndex > 0) playTrack(currentTrackIndex - 1); }
         if (e.target.closest('#btn-close-player')) {
@@ -966,7 +959,7 @@ function setupEventListeners() {
         if (e.target.closest('#btn-mute-toggle')) {
             const btnMute = e.target.closest('#btn-mute-toggle');
             let isMuted = btnMute.getAttribute('data-muted') === 'true';
-            btnMute.setAttribute('data-muted', !isMuted); // Alterna estado
+            btnMute.setAttribute('data-muted', !isMuted);
             aplicarVolume();
         }
 
@@ -980,7 +973,7 @@ function setupEventListeners() {
         }
     });
 
-    // Filtros e Inputs (Eventos de teclado)
+    // Filtros e Eventos de teclado
     document.getElementById('search-yt-input')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
     document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
     document.getElementById('search-internal-input')?.addEventListener('input', (e) => filterInternalDatabase(e.target.value));
@@ -993,107 +986,15 @@ function setupEventListeners() {
         }; reader.readAsText(file);
     });
 
-    // Dispara a mudança de volume enquanto você arrasta a barra
+    // Controle de volumeslider
     document.addEventListener('input', (e) => {
         if (e.target.id === 'player-volume-slider') {
             const btnMute = document.getElementById('btn-mute-toggle');
-            if (btnMute) btnMute.setAttribute('data-muted', 'false'); // Tira o mute se mexer na barra
+            if (btnMute) btnMute.setAttribute('data-muted', 'false');
             aplicarVolume();
         }
     });
 
-// --- MOTOR DA API DO GOOGLE DRIVE (PASTA OCULTA APPDATA) ---
-
-// Auxiliar para obter o Token do Drive salvo localmente
-function obterDriveToken() {
-    return localStorage.getItem(`streamhub_drive_token_${currentUser}`);
-}
-
-// Procura o arquivo JSON na pasta oculta do Drive. Se não existir, cria um novo.
-async function sincronizarEBaixarDadosDoDrive() {
-    const token = obterDriveToken();
-    if (!token) return console.error("Token do Google Drive não encontrado.");
-
-    try {
-        // 1. Procura se já existe um arquivo com o nosso nome na pasta de dados do app
-        const urlBusca = `https://www.googleapis.com/drive/v3/files?q=name='streamhub_data.json'+and+'appDataFolder'+in+parents&spaces=appDataFolder&key=${CONFIG.YT_API_KEY}`;
-        const resBusca = await fetch(urlBusca, { headers: { 'Authorization': `Bearer ${token}` } });
-        const dataBusca = await resBusca.json();
-
-        if (dataBusca.files && dataBusca.files.length > 0) {
-            // Arquivo encontrado! Guarda o ID dele para atualizações futuras
-            const arquivoId = dataBusca.files[0].id;
-            localStorage.setItem(`streamhub_drive_file_id_${currentUser}`, arquivoId);
-
-            // 2. Faz o download do conteúdo do arquivo JSON
-            const resConteudo = await fetch(`https://www.googleapis.com/drive/v3/files/${arquivoId}?alt=media`, { headers: { 'Authorization': `Bearer ${token}` } });
-            const dadosBaixados = await resConteudo.json();
-            database = Array.isArray(dadosBaixados) ? dadosBaixados : [];
-        } else {
-            // Arquivo não existe na nuvem do usuário. Vamos criar o primeiro em branco.
-            console.log("Criando primeiro arquivo de acervo no Google Drive...");
-            database = [];
-            await salvarArquivoNoGoogleDrive(token, true); // true indica criação nova
-        }
-    } catch (err) {
-        console.error("Erro ao sincronizar com Google Drive:", err);
-        alert("Não foi possível carregar seus dados do Google Drive. Verifique a conexão.");
-    }
-}
-
-// Faz o Upload/Sobregravação do JSON no Drive do usuário
-async function salvarArquivoNoGoogleDrive(token, criarNovo = false) {
-    const arquivoId = localStorage.getItem(`streamhub_drive_file_id_${currentUser}`);
-    const dadosParaSalvar = JSON.stringify(database, null, 2);
-    
-    let url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
-    let method = "POST";
-
-    // Se não for criação nova, atualiza o arquivo existente apontando para o ID dele
-    if (!criarNovo && arquivoId) {
-        url = `https://www.googleapis.com/upload/drive/v3/files/${arquivoId}?uploadType=media`;
-        method = "PATCH";
-    }
-
-    try {
-        let resposta;
-        if (method === "PATCH") {
-            // Atualização simples do conteúdo do arquivo existente
-            resposta = await fetch(url, {
-                method: method,
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: dadosParaSalvar
-            });
-        } else {
-            // Criação estruturada em Multipart (Metadados + Conteúdo) para o primeiro arquivo
-            const boundary = "foo_bar_baz";
-            const metadata = { name: "streamhub_data.json", parents: ["appDataFolder"] };
-            
-            const multipartBody = 
-                `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}` +
-                `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${dadosParaSalvar}\r\n--${boundary}--`;
-
-            resposta = await fetch(url, {
-                method: method,
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
-                body: multipartBody
-            });
-            
-            const resultadoCriacao = await resposta.json();
-            if (resultadoCriacao.id) {
-                localStorage.setItem(`streamhub_drive_file_id_${currentUser}`, resultadoCriacao.id);
-            }
-        }
-
-        if (!resposta.ok) throw new Error("Falha no upload para o Drive.");
-        console.log("Acervo sincronizado com o Google Drive com sucesso!");
-    } catch (err) {
-        console.error("Erro ao salvar no Google Drive:", err);
-        alert("Erro ao salvar mudanças na nuvem do Google Drive.");
-    }
-}
-
-    
     configurarEventosBuscaCanal();
     inicializarSeletorCoresLinear();
 }
