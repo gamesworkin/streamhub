@@ -707,14 +707,6 @@ function downloadJSON(obj, filename) {
     document.body.appendChild(a); a.click(); a.remove();
 }
 
-// --- FIM DA FUNÇÃO DOWNLOAD JSON QUE VOCÊ JÁ TEM ---
-function downloadJSON(obj, filename) {
-    const prepararObjeto = Array.isArray(obj) ? obj.map(({idFirebase, ...r}) => r) : obj;
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(prepararObjeto, null, 2));
-    const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_backup.json`);
-    document.body.appendChild(a); a.click(); a.remove();
-}
-
 // ============================================================================
 //   MOTOR DA API DO GOOGLE DRIVE (PASTA OCULTA APPDATA) - ESCOPO GLOBAL SEGURO
 // ============================================================================
