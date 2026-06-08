@@ -707,6 +707,98 @@ function downloadJSON(obj, filename) {
     document.body.appendChild(a); a.click(); a.remove();
 }
 
+// --- FIM DA FUNÇÃO DOWNLOAD JSON QUE VOCÊ JÁ TEM ---
+function downloadJSON(obj, filename) {
+    const prepararObjeto = Array.isArray(obj) ? obj.map(({idFirebase, ...r}) => r) : obj;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(prepararObjeto, null, 2));
+    const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_backup.json`);
+    document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ============================================================================
+//   MOTOR DA API DO GOOGLE DRIVE (PASTA OCULTA APPDATA) - ESCOPO GLOBAL SEGURO
+// ============================================================================
+
+function obterDriveToken() {
+    return localStorage.getItem(`streamhub_drive_token_${currentUser}`);
+}
+
+async function sincronizarEBaixarDadosDoDrive() {
+    const token = obterDriveToken();
+    if (!token) return console.error("Token do Google Drive não encontrado.");
+
+    try {
+        const urlBusca = `https://www.googleapis.com/drive/v3/files?q=name='streamhub_data.json'+and+'appDataFolder'+in+parents&spaces=appDataFolder&key=${CONFIG.YT_API_KEY}`;
+        const resBusca = await fetch(urlBusca, { headers: { 'Authorization': `Bearer ${token}` } });
+        const dataBusca = await resBusca.json();
+
+        if (dataBusca.files && dataBusca.files.length > 0) {
+            const arquivoId = dataBusca.files[0].id;
+            localStorage.setItem(`streamhub_drive_file_id_${currentUser}`, arquivoId);
+
+            const resConteudo = await fetch(`https://www.googleapis.com/drive/v3/files/${arquivoId}?alt=media`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const dadosBaixados = await resConteudo.json();
+            database = Array.isArray(dadosBaixados) ? dadosBaixados : [];
+        } else {
+            console.log("Criando primeiro arquivo de acervo no Google Drive...");
+            database = [];
+            await salvarArquivoNoGoogleDrive(token, true);
+        }
+    } catch (err) {
+        console.error("Erro ao sincronizar com Google Drive:", err);
+        alert("Não foi possível carregar seus dados do Google Drive. Verifique a conexão.");
+    }
+}
+
+async function salvarArquivoNoGoogleDrive(token, criarNovo = false) {
+    const arquivoId = localStorage.getItem(`streamhub_drive_file_id_${currentUser}`);
+    const dadosParaSalvar = JSON.stringify(database, null, 2);
+    
+    let url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    let method = "POST";
+
+    if (!criarNovo && arquivoId) {
+        url = `https://www.googleapis.com/upload/drive/v3/files/${arquivoId}?uploadType=media`;
+        method = "PATCH";
+    }
+
+    try {
+        let resposta;
+        if (method === "PATCH") {
+            resposta = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: dadosParaSalvar
+            });
+        } else {
+            const boundary = "foo_bar_baz";
+            const metadata = { name: "streamhub_data.json", parents: ["appDataFolder"] };
+            
+            const multipartBody = 
+                `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}` +
+                `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${dadosParaSalvar}\r\n--${boundary}--`;
+
+            resposta = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+                body: multipartBody
+            });
+            
+            const resultadoCriacao = await resposta.json();
+            if (resultadoCriacao.id) {
+                localStorage.setItem(`streamhub_drive_file_id_${currentUser}`, resultadoCriacao.id);
+            }
+        }
+
+        if (!resposta.ok) throw new Error("Falha no upload para o Drive.");
+        console.log("Acervo sincronizado com o Google Drive com sucesso!");
+    } catch (err) {
+        console.error("Erro ao salvar no Google Drive:", err);
+        alert("Erro ao salvar mudanças na nuvem do Google Drive.");
+    }
+}
+
+
 function inicializarSeletorCoresLinear() {
     const bar = document.getElementById('color-spectrum-bar'); const selector = document.getElementById('color-spectrum-selector'); if (!bar || !selector) return;
     let isDragging = false; const coresGradiente = ["#000000", "#ff0000", "#ff00ff", "#0000ff", "#00ffff", "#00ff00", "#ffff00", "#ff0000", "#ffffff"];
