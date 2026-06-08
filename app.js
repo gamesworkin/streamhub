@@ -619,6 +619,21 @@ async function processarInjecaoDeDadosAcumulativa(novosItens) {
     } catch(e) { alert("Falha na mesclagem de dados."); }
 }
 
+// Verifica o tamanho do banco de dados em KB (Trava de segurança de 500KB)
+function verificarLimiteArmazenamentoLocal(dadosParaSalvar) {
+    if (storageProvider !== 'local') return true; // Se for Drive, não há limite
+    
+    // Converte os dados em string e mede o tamanho em Bytes
+    const tamanhoEmBytes = new Blob([JSON.stringify(dadosParaSalvar)]).size;
+    const tamanhoEmKB = tamanhoEmBytes / 1024;
+    
+    if (tamanhoEmKB > 500) {
+        alert(`⚠️ Limite de Armazenamento Excedido!\n\nSeu acervo atual ocupa ${tamanhoEmKB.toFixed(2)} KB.\nO limite máximo para contas com armazenamento no Servidor Local é de 500 KB.\n\nPara ter espaço ilimitado, mude para a Nuvem Particular (Google Drive).`);
+        return false; // Bloqueia o salvamento
+    }
+    return true; // Liberado para salvar
+}
+
 async function empurrarBancoIntegralParaServidor() {
     const loteLimpoParaSalvar = database.map(({idFirebase, ...resto}) => resto);
     let resposta = await fetch(CONFIG.FIREBASE_URL, { method: "PUT", body: JSON.stringify(loteLimpoParaSalvar), headers: { 'Content-Type': 'application/json' } });
@@ -682,6 +697,35 @@ function setupEventListeners() {
     document.addEventListener('click', async (e) => {
         // --- NAVEGAÇÃO SUPERIOR ---
         if (e.target.closest('#toggle-sidebar')) handleToggleSidebar();
+                // --- INTERAÇÃO COM O MODAL DE ARMAZENAMENTO HÍBRIDO ---
+        if (e.target.closest('#opt-storage-drive')) {
+            storageSelectedOptionProvisoria = 'drive';
+            document.getElementById('opt-storage-drive').classList.add('selected-drive');
+            document.getElementById('opt-storage-local').classList.remove('selected-local');
+            const btnConfirm = document.getElementById('btn-confirm-storage');
+            btnConfirm.disabled = false; btnConfirm.innerText = "Confirmar Nuvem Particular";
+        }
+
+        if (e.target.closest('#opt-storage-local')) {
+            storageSelectedOptionProvisoria = 'local';
+            document.getElementById('opt-storage-local').classList.add('selected-local');
+            document.getElementById('opt-storage-drive').classList.remove('selected-drive');
+            const btnConfirm = document.getElementById('btn-confirm-storage');
+            btnConfirm.disabled = false; btnConfirm.innerText = "Confirmar Servidor Local (Limite 500KB)";
+        }
+
+        if (e.target.closest('#btn-confirm-storage')) {
+            e.preventDefault();
+            storageProvider = storageSelectedOptionProvisoria;
+            document.getElementById('storage-modal').classList.add('hidden');
+            
+            // Salva a decisão do usuário no localStorage para não perguntar de novo nesta máquina
+            localStorage.setItem(`streamhub_storage_choice_${currentUser}`, storageProvider);
+            
+            // Inicializa as urls baseadas na escolha
+            configurarCaminhosDeArmazenamento();
+        }
+
         if (e.target.closest('#bc-root') || e.target.closest('#bc-home')) { currentView = 'categories'; selectedCategory=''; selectedSubcategory=''; renderMosaic(); }
         if (e.target.closest('#bc-category')) { currentView = 'subcategories'; selectedSubcategory=''; renderMosaic(); }
         if (e.target.closest('#btn-logout')) handleLogoutActions();
