@@ -48,6 +48,10 @@ let canalSelecionadoProvisorio = null;
 
 let expandedCrudCats = {};
 let expandedCrudSubs = {};
+// --- NOVAS VARIÁVEIS PARA O SISTEMA HÍBRIDO ---
+let storageProvider = ""; // Guardará 'drive' ou 'local'
+let storageSelectedOptionProvisoria = ""; // Controle do clique visual no modal
+
 
 function obterUrlNodoItem(idItem = null) {
     let urlSemJson = CONFIG.FIREBASE_URL.replace(".json", "");
