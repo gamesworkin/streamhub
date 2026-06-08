@@ -4,24 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StreamHub by Di Workin'</title>
-    <link rel="icon" type="image/x-icon" href="fav.ico">
+    <link class="hidden" rel="icon" type="image/x-icon" href="fav.ico">
     <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome para os Ícones do Sistema -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- SDKs do Firebase carregados com segurança antes do app.js -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
-    <!-- ==========================================
-         TELA DE LOGIN INDEPENDENTE
-         ========================================== -->
     <div id="login-screen" class="login-container">
         <div class="login-box">
             <div class="login-logo-wrapper">
-                <img src="logo.png" width="128" height="128" alt="Logo MediaHub" class="login-logo-img">
+                <img src="logo.png" width="128" height="128" alt="Logo StreamHub" class="login-logo-img">
             </div>
             <h2>StreamHub</h2>
             <form id="form-login">
@@ -35,23 +30,19 @@
                 </div>
                 <button type="submit" id="btn-login" class="btn-primary">Entrar</button>
 
-<div class="login-separator">
-    <span>ou</span>
-</div>
+                <div class="login-separator">
+                    <span>ou</span>
+                </div>
 
-<button type="button" id="btn-google-login" class="btn-google">
-    <i class="fab fa-google"></i> Entrar com o Google
-</button>
+                <button type="button" id="btn-google-login" class="btn-google">
+                    <i class="fab fa-google"></i> Entrar com o Google
+                </button>
             </form>
         </div>
     </div>
 
-    <!-- ==========================================
-         CONTAINER PRINCIPAL DO APLICATIVO
-         ========================================== -->
     <div id="app-container" class="main-wrapper hidden">
         
-        <!-- CABEÇALHO SUPERIOR -->
         <header class="app-header">
             <div class="header-left">
                 <button id="toggle-sidebar" class="btn-icon" title="Menu Lateral"><i class="fas fa-bars"></i></button>
@@ -72,7 +63,6 @@
             </div>
         </header>
 
-        <!-- Barra de Busca Exclusiva Mobile -->
         <div id="mobile-search-row" class="mobile-search-container hidden">
             <div class="search-bar">
                 <i class="fas fa-search"></i>
@@ -80,15 +70,13 @@
             </div>
         </div>
 
-        <!-- CORPO DA APLICAÇÃO -->
         <div class="content-body">
             <aside id="sidebar" class="sidebar-panel">
                 <div class="sidebar-search">
                     <input type="text" id="search-internal-input" placeholder="Filtrar categorias locais...">
                 </div>
                 <ul id="sidebar-tree" class="tree-root">
-                    <!-- Alimentado Dinamicamente pelo JS -->
-                </ul>
+                    </ul>
             </aside>
 
             <main class="mosaic-container">
@@ -100,19 +88,14 @@
                 </div>
 
                 <div id="mosaic-grid" class="mosaic-grid">
-                    <!-- Cards injetados aqui -->
-                </div>
+                    </div>
             </main>
         </div>
 
-        <!-- ==========================================
-             REPRODUTOR FLUTUANTE AVANÇADO (80% / CONTROLES INTEGRADOS)
-             ========================================== -->
         <div id="player-container" class="floating-player hidden">
             <div class="player-header">
                 <h3 id="current-track-title">A reproduzir...</h3>
                 
-                <!-- Novos controles integrados ao cabeçalho do Player -->
                 <div class="player-controls-group">
                     <button id="btn-prev-track" class="btn-player-action" title="Mídia Anterior"><i class="fas fa-step-backward"></i></button>
                     <button id="btn-next-track" class="btn-player-action" title="Próxima Mídia"><i class="fas fa-step-forward"></i></button>
@@ -132,7 +115,6 @@
             </div>
         </div>
 
-        <!-- BOTÃO SWITCH FLUTUANTE DE TEMAS (CANTO INFERIOR DIREITO) -->
         <div class="theme-switcher-float">
             <button class="theme-btn-toggle btn-t-yt" id="theme-switch-youtube" title="Tema YouTube"><i class="fab fa-youtube"></i></button>
             <button class="theme-btn-toggle btn-t-nf" id="theme-switch-netflix" title="Tema Netflix"><i class="fas fa-play"></i></button>
@@ -142,7 +124,6 @@
 
     </div>
 
-    <!-- MODAL CENTRAL DE ADMINISTRAÇÃO -->
     <div id="admin-modal" class="modal-overlay hidden">
         <div class="modal-box admin-box">
             <div class="modal-header">
@@ -184,17 +165,14 @@
                     <button id="btn-save-media" class="btn-success-block">Salvar no meu acervo</button>
                 </div>
 
-                <!-- TAB VINCULAR CANAL ATUALIZADA (SUPORTE A MULTI-RESULTADOS) -->
                 <div id="channel-tab" class="tab-content hidden">
                     <div class="form-row-inline">
                         <input type="text" id="search-channel-input" placeholder="Nome do Canal... (Pressione Enter para pesquisar)">
                         <button id="btn-search-channel" class="btn-secundary">Buscar Canal</button>
                     </div>
                     
-                    <!-- Lista com scroll para até 10 resultados encontrados -->
                     <div id="channels-scroll-container" class="channels-list-wrapper" style="display:none;">
-                        <!-- Injetado dinamicamente via JS com múltiplos canais encontrados -->
-                    </div>
+                        </div>
 
                     <div id="channel-preview" class="preview-card-box" style="display:none; align-items:center; margin-top: 15px;">
                         <img id="chan-thumb" src="" style="border-radius:50%; width:65px; height:65px;">
@@ -246,7 +224,6 @@
         </div>
     </div>
 
-    <!-- MODAL DE EDIÇÃO AVANÇADA -->
     <div id="edit-media-modal" class="modal-overlay hidden">
         <div class="modal-box edit-box">
             <div class="modal-header">
@@ -263,6 +240,36 @@
             <div class="modal-footer-btns">
                 <button id="btn-cancel-edit-media-2" class="btn-default" style="border-radius:4px;">Cancelar</button>
                 <button id="btn-submit-edit-media" class="btn-success" style="border-radius:4px;">Salvar Mudanças</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="storage-modal" class="modal-overlay hidden">
+        <div class="modal-box edit-box" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-database"></i> Configuração de Armazenamento</h3>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 15px;">
+                <p style="font-size: 0.95rem; color: #fff; line-height: 1.5;">
+                    Detectamos que este é o seu primeiro acesso ao <strong>StreamHub</strong> com esta conta Google. Para prosseguir, selecione abaixo onde deseja hospedar seu acervo pessoal de links e mídias:
+                </p>
+                
+                <div class="storage-option-card" style="background: rgba(41, 128, 185, 0.1); border: 1px solid #2980b9; padding: 15px; border-radius: 6px; cursor: pointer; transition: background 0.2s;" id="opt-storage-drive">
+                    <h4 style="color: #2980b9; margin-bottom: 5px; font-size: 1rem;"><i class="fab fa-google-drive"></i> Nuvem Particular (Google Drive)</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-gray); line-height: 1.4;">
+                        O sistema salvará seus arquivos em uma pasta oculta e protegida dentro do seu próprio Google Drive. <strong>Espaço Gratuito e Ilimitado.</strong> Requer autorização de escopo adicional.
+                    </p>
+                </div>
+
+                <div class="storage-option-card" style="background: rgba(211, 84, 0, 0.1); border: 1px solid #d35400; padding: 15px; border-radius: 6px; cursor: pointer; transition: background 0.2s;" id="opt-storage-local">
+                    <h4 style="color: #d35400; margin-bottom: 5px; font-size: 1rem;"><i class="fas fa-server"></i> Servidor Local (StreamHub)</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-gray); line-height: 1.4;">
+                        Seus dados serão gravados diretamente em nosso servidor Realtime Database. Por motivos de custeio de infraestrutura, esta modalidade possui uma <strong>trava restritiva de no máximo 500 KB de dados acumulados</strong>.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer-btns" style="padding: 15px; background: var(--bg-sidebar);">
+                <button id="btn-confirm-storage" class="btn-success" style="border-radius:4px; width: 100%; font-weight: bold; font-size: 1rem;" disabled>Selecione uma Opção acima</button>
             </div>
         </div>
     </div>
