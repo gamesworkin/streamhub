@@ -188,6 +188,12 @@ function limparInterfaceLocal() {
 async function initApp() { await carregarCanaisDinamicos(); await recarregarDadosDoBanco(); }
 
 async function recarregarDadosDoBanco() {
+    // --- DESVIO CASO SEJA USUÁRIO DO GOOGLE DRIVE ---
+    if (storageProvider === 'drive') {
+        await sincronizarEBaixarDadosDoDrive();
+        renderSidebar(); renderMosaic(); alimentarSeletorCategoriasCanais();
+        return;
+    }
     try {
         const res = await fetch(CONFIG.FIREBASE_URL); const data = await res.json(); database = [];
         if (data) {
@@ -667,10 +673,14 @@ function configurarCaminhosDeArmazenamento() {
 async function empurrarBancoIntegralParaServidor() {
     const loteLimpoParaSalvar = database.map(({idFirebase, ...resto}) => resto);
     
-    // 1. Se o armazenamento for no Google Drive, desvia o salvamento para lá (trataremos a API na Etapa 3)
+        // 1. Se o armazenamento for no Google Drive, desvia o salvamento para a nuvem particular
     if (storageProvider === 'drive') {
-        console.log("Sincronizando acervo com o Google Drive...");
-        // Chamar a função do drive aqui na etapa 3
+        const token = obterDriveToken();
+        if (token) {
+            await salvarArquivoNoGoogleDrive(token, false);
+        } else {
+            alert("Sessão expirada. Faça login novamente para salvar dados.");
+        }
         return; 
     }
     
@@ -900,7 +910,98 @@ function setupEventListeners() {
         }
     });
 
+// --- MOTOR DA API DO GOOGLE DRIVE (PASTA OCULTA APPDATA) ---
 
+// Auxiliar para obter o Token do Drive salvo localmente
+function obterDriveToken() {
+    return localStorage.getItem(`streamhub_drive_token_${currentUser}`);
+}
+
+// Procura o arquivo JSON na pasta oculta do Drive. Se não existir, cria um novo.
+async function sincronizarEBaixarDadosDoDrive() {
+    const token = obterDriveToken();
+    if (!token) return console.error("Token do Google Drive não encontrado.");
+
+    try {
+        // 1. Procura se já existe um arquivo com o nosso nome na pasta de dados do app
+        const urlBusca = `https://www.googleapis.com/drive/v3/files?q=name='streamhub_data.json'+and+'appDataFolder'+in+parents&spaces=appDataFolder&key=${CONFIG.YT_API_KEY}`;
+        const resBusca = await fetch(urlBusca, { headers: { 'Authorization': `Bearer ${token}` } });
+        const dataBusca = await resBusca.json();
+
+        if (dataBusca.files && dataBusca.files.length > 0) {
+            // Arquivo encontrado! Guarda o ID dele para atualizações futuras
+            const arquivoId = dataBusca.files[0].id;
+            localStorage.setItem(`streamhub_drive_file_id_${currentUser}`, arquivoId);
+
+            // 2. Faz o download do conteúdo do arquivo JSON
+            const resConteudo = await fetch(`https://www.googleapis.com/drive/v3/files/${arquivoId}?alt=media`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const dadosBaixados = await resConteudo.json();
+            database = Array.isArray(dadosBaixados) ? dadosBaixados : [];
+        } else {
+            // Arquivo não existe na nuvem do usuário. Vamos criar o primeiro em branco.
+            console.log("Criando primeiro arquivo de acervo no Google Drive...");
+            database = [];
+            await salvarArquivoNoGoogleDrive(token, true); // true indica criação nova
+        }
+    } catch (err) {
+        console.error("Erro ao sincronizar com Google Drive:", err);
+        alert("Não foi possível carregar seus dados do Google Drive. Verifique a conexão.");
+    }
+}
+
+// Faz o Upload/Sobregravação do JSON no Drive do usuário
+async function salvarArquivoNoGoogleDrive(token, criarNovo = false) {
+    const arquivoId = localStorage.getItem(`streamhub_drive_file_id_${currentUser}`);
+    const dadosParaSalvar = JSON.stringify(database, null, 2);
+    
+    let url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
+    let method = "POST";
+
+    // Se não for criação nova, atualiza o arquivo existente apontando para o ID dele
+    if (!criarNovo && arquivoId) {
+        url = `https://www.googleapis.com/upload/drive/v3/files/${arquivoId}?uploadType=media`;
+        method = "PATCH";
+    }
+
+    try {
+        let resposta;
+        if (method === "PATCH") {
+            // Atualização simples do conteúdo do arquivo existente
+            resposta = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: dadosParaSalvar
+            });
+        } else {
+            // Criação estruturada em Multipart (Metadados + Conteúdo) para o primeiro arquivo
+            const boundary = "foo_bar_baz";
+            const metadata = { name: "streamhub_data.json", parents: ["appDataFolder"] };
+            
+            const multipartBody = 
+                `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}` +
+                `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${dadosParaSalvar}\r\n--${boundary}--`;
+
+            resposta = await fetch(url, {
+                method: method,
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': `multipart/related; boundary=${boundary}` },
+                body: multipartBody
+            });
+            
+            const resultadoCriacao = await resposta.json();
+            if (resultadoCriacao.id) {
+                localStorage.setItem(`streamhub_drive_file_id_${currentUser}`, resultadoCriacao.id);
+            }
+        }
+
+        if (!resposta.ok) throw new Error("Falha no upload para o Drive.");
+        console.log("Acervo sincronizado com o Google Drive com sucesso!");
+    } catch (err) {
+        console.error("Erro ao salvar no Google Drive:", err);
+        alert("Erro ao salvar mudanças na nuvem do Google Drive.");
+    }
+}
+
+    
     configurarEventosBuscaCanal();
     inicializarSeletorCoresLinear();
 }
