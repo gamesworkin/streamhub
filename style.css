@@ -697,3 +697,37 @@ body.theme-claro .theme-switcher-float {
     .theme-switcher-float { bottom: 10px; right: 10px; padding: 6px; gap: 4px; }
     .theme-btn-toggle { width: 30px; height: 30px; font-size: 0.75rem; }
 }
+/* ==========================================
+   INOVAÇÃO: MODAL DE ESCOLHA DE ARMAZENAMENTO
+   ========================================== */
+.storage-option-card {
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s !important;
+}
+
+/* Efeito de Hover (Passar o mouse) */
+.storage-option-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Estado quando a opção do Google Drive for selecionada */
+.storage-option-card.selected-drive {
+    background: rgba(41, 128, 185, 0.25) !important;
+    border-color: #3498db !important;
+    box-shadow: 0 0 12px rgba(52, 152, 219, 0.4);
+}
+
+/* Estado quando a opção do Servidor Local for selecionada */
+.storage-option-card.selected-local {
+    background: rgba(211, 84, 0, 0.25) !important;
+    border-color: #e67e22 !important;
+    box-shadow: 0 0 12px rgba(230, 126, 34, 0.4);
+}
+
+/* Feedback visual de desabilitado para o botão de confirmação */
+#btn-confirm-storage:disabled {
+    background: #444 !important;
+    color: #888 !important;
+    cursor: not-allowed;
+    transform: none !important;
+}
