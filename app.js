@@ -95,33 +95,42 @@ function checkSession() {
     firebase.auth().onAuthStateChanged((user) => {
         if (user && user.email) {
             const emailLogado = user.email.toLowerCase();
+            currentUser = emailLogado;
             
             // 1. Verifica se é um usuário do login convencional (antigo)
             if (USERS_DATABASE[emailLogado]) {
-                currentUser = emailLogado;
+                storageProvider = 'local';
                 CONFIG.FIREBASE_URL = USERS_DATABASE[currentUser].firebaseUrl;
                 CONFIG.YT_API_KEY = USERS_DATABASE[currentUser].ytApiKey;
-            } 
-            // 2. Se não estiver no USERS_DATABASE, significa que logou pelo Google!
-            else {
-                currentUser = emailLogado;
-                // Cria um nó exclusivo usando o UID do Firebase para evitar conflitos e caracteres proibidos
-                CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${user.uid}/midias.json`;
                 
-                // Usamos uma API Key padrão para os usuários do Google (pode usar a do Diego Mídias como fallback)
-                CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"; 
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                carregarTemaDoUsuarioLogado(user.uid);
+                initApp();
+            } 
+            // 2. Usuário logado pelo Google!
+            else {
+                // Verifica se ele já tem uma escolha salva localmente
+                const escolhaSalva = localStorage.getItem(`streamhub_storage_choice_${emailLogado}`);
+                
+                if (escolhaSalva) {
+                    storageProvider = escolhaSalva;
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                    carregarTemaDoUsuarioLogado(user.uid);
+                    configurarCaminhosDeArmazenamento();
+                } else {
+                    // Usuário novo: Mostra o modal de escolha de armazenamento híbrido
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('hidden');
+                    document.getElementById('storage-modal').classList.remove('hidden');
+                }
             }
-            
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            carregarTemaDoUsuarioLogado(user.uid); // Passamos o UID ou e-mail para persistir o tema individual
-            initApp();
             return;
         }
         limparInterfaceLocal();
     });
 }
-
 
 function configurarEventosLogin() {
     const inputUser = document.getElementById('login-user');
@@ -769,12 +778,22 @@ function setupEventListeners() {
             if(row) { row.classList.toggle('hidden'); if(!row.classList.contains('hidden')) document.getElementById('search-yt-input-mobile').focus(); }
         }
         // --- NOVO: LOGIN COM O GOOGLE ---
+                // --- LOGIN COM O GOOGLE + PERMISSÃO DO GOOGLE DRIVE ---
         if (e.target.closest('#btn-google-login')) {
             const btnGoogle = e.target.closest('#btn-google-login');
             btnGoogle.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
             btnGoogle.disabled = true;
 
+            // Define o escopo para ler/escrever APENAS na pasta oculta de dados do próprio app no Drive do usuário
+            googleProvider.addScope('https://www.googleapis.com/auth/drive.appdata');
+
             firebase.auth().signInWithPopup(googleProvider)
+                .then((result) => {
+                    // Captura e salva o Token de Acesso temporário da API do Google
+                    const credential = result.credential;
+                    const token = credential.accessToken;
+                    localStorage.setItem(`streamhub_drive_token_${result.user.email.toLowerCase()}`, token);
+                })
                 .catch((error) => {
                     alert("Erro ao logar com o Google: " + error.message);
                     btnGoogle.innerHTML = '<i class="fab fa-google"></i> Entrar com o Google';
