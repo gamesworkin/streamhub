@@ -2,7 +2,7 @@
 // CONFIGURAÇÃO INICIAL E CREDENCIAIS DO FIREBASE
 // ==========================================
 const firebaseConfig = {
-    apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
+    apiKey: "AIzaSyDf9du6bf1zCxKtaeluT671ywLKJEorGmg", 
     authDomain: "workin--music.firebaseapp.com",
     databaseURL: "https://workin--music-default-rtdb.firebaseio.com",
     projectId: "workin--music",
