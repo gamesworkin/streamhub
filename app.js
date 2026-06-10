@@ -820,7 +820,43 @@ function setupEventListeners() {
     // Filtros e Inputs (Eventos de teclado)
     document.getElementById('search-yt-input')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
     document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
-    document.getElementById('search-internal-input')?.addEventListener('input', (e) => filterInternalDatabase(e.target.value));
+       // Dispara a filtragem visual na sidebar enquanto o utilizador digita
+    document.getElementById('search-internal-input')?.addEventListener('input', (e) => {
+        const termo = e.target.value.trim();
+        filterInternalDatabase(termo);
+        
+        // Se o utilizador apagar tudo na busca local, volta automaticamente para a tela inicial de categorias
+        if (termo === "") {
+            currentView = 'categories';
+            selectedCategory = '';
+            selectedSubcategory = '';
+            renderMosaic();
+        }
+    });
+
+    // Captura o pressionamento do ENTER para jogar os resultados locais direto no mosaico
+    document.getElementById('search-internal-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const termo = e.target.value.toLowerCase().trim();
+            if (!termo) return;
+
+            // Varre todo o banco de mídias local procurando pelo título, categoria ou subcategoria
+            lastLocalSearchResults = database.filter(item => 
+                item.título.toLowerCase().includes(termo) || 
+                item.categoria.toLowerCase().includes(termo) || 
+                (item.subcategoria && item.subcategoria.toLowerCase().includes(termo))
+            );
+
+            // Redireciona o mosaico para exibir os resultados encontrados
+            currentView = 'search_local_results';
+            renderMosaic();
+            
+            // Fecha a sidebar no mobile para o utilizador ver o resultado direto
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar')?.classList.remove('open');
+            }
+        }
+    });
 
     // Importar via arquivo JSON
     document.getElementById('file-import-json')?.addEventListener('change', (e) => {
