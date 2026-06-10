@@ -464,7 +464,26 @@ function playTrack(index) {
     else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent')) {
         if (rawPlayerEl) { rawPlayerEl.classList.remove('hidden'); rawPlayerEl.src = linkOriginal; rawPlayerEl.play(); aplicarVolume(); rawPlayerEl.onended = () => { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }; }
     } 
-    else { if (univPlayerEl) { univPlayerEl.classList.remove('hidden'); univPlayerEl.src = linkOriginal.includes("archive.org/details/") ? linkOriginal.replace("archive.org/details/", "archive.org/embed/") : linkOriginal; } }
+        else { 
+        if (univPlayerEl) { 
+            univPlayerEl.classList.remove('hidden'); 
+            
+            let urlTratada = linkOriginal;
+            
+            // Se for link do Archive.org, faz a conversão padrão que você já tinha
+            if (urlTratada.includes("archive.org/details/")) {
+                urlTratada = urlTratada.replace("archive.org/details/", "archive.org/embed/");
+            } 
+            // Se for uma Playlist do YouTube carregada no player universal, injeta as travas mobile
+            else if (urlTratada.includes("youtube.com/embed/videoseries")) {
+                // Se a URL já tiver parâmetros, adiciona com '&', se não, com '?'
+                const separador = urlTratada.includes("?") ? "&" : "?";
+                urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
+            }
+            
+            univPlayerEl.src = urlTratada; 
+        } 
+    }
 }
 
 function extractYoutubeId(url) {
