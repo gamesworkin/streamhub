@@ -265,6 +265,29 @@ function renderMosaic() {
             }
             card.appendChild(btnGroup); grid.appendChild(card);
         });
+            else if (currentView === 'search_local_results') {
+        const bcSrc = document.getElementById('bc-search');
+        if (bcSrc) {
+            bcSrc.classList.remove('hidden');
+            bcSrc.innerHTML = ` &gt; <i class="fas fa-search"></i> Resultados Locais para: "${document.getElementById('search-internal-input').value}"`;
+        }
+        
+        if (lastLocalSearchResults.length === 0) {
+            grid.innerHTML = '<h3 style="color: var(--text-gray); padding: 20px;">Nenhuma mídia encontrada no seu acervo local.</h3>';
+            return;
+        }
+
+        // Define a playlist atual como sendo os resultados encontrados na busca
+        currentPlaylist = lastLocalSearchResults;
+
+        lastLocalSearchResults.forEach((track, index) => {
+            // Encontra o index real no banco completo para manter o botão de editar funcionando
+            const realIndex = database.findIndex(dbItem => dbItem.link === track.link && dbItem.título === track.título);
+            
+            grid.appendChild(createCard(track.título, track.capa, false, false, () => { playTrack(index); }, realIndex));
+        });
+    }
+
     }
 }
 
