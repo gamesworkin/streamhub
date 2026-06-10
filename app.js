@@ -839,11 +839,15 @@ function setupEventListeners() {
             const termo = e.target.value.toLowerCase().trim();
             if (!termo) return;
 
-            lastLocalSearchResults = database.filter(item => 
-                item.título.toLowerCase().includes(termo) || 
-                item.categoria.toLowerCase().includes(termo) || 
-                (item.subcategoria && item.subcategoria.toLowerCase().includes(termo))
-            );
+            lastLocalSearchResults = database.filter(item => {
+    const titulo = item.título || item.titulo || ""; // aceita com ou sem acento
+    const categoria = item.categoria || item.Categoria || "";
+    const subcategoria = item.subcategoria || "";
+
+    return titulo.toLowerCase().includes(termo) || 
+           categoria.toLowerCase().includes(termo) || 
+           subcategoria.toLowerCase().includes(termo);
+});
 
             currentView = 'search_local_results';
             renderMosaic();
