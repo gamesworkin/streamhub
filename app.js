@@ -42,7 +42,8 @@ let selectedSubcategory = '';
 let currentPlaylist = [];
 let currentTrackIndex = 0;
 let ytPlayer = null;
-let lastYtSearchResults = []; 
+let lastYtSearchResults = [];
+let lastLocalSearchResults = []; // Guarda os resultados da busca interna do acervo
 let activeEditingIndex = null;
 let canalSelecionadoProvisorio = null;
 
