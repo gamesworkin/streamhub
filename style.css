@@ -697,3 +697,15 @@ body.theme-claro .theme-switcher-float {
     .theme-switcher-float { bottom: 10px; right: 10px; padding: 6px; gap: 4px; }
     .theme-btn-toggle { width: 30px; height: 30px; font-size: 0.75rem; }
 }
+
+/* ==========================================
+   CORREÇÃO DE RESPONSIVIDADE PARA EMbeds (DRIVE/UNIVERSAL)
+   ========================================== */
+.player-content iframe#universal-player {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    object-fit: contain; /* Evita que o vídeo sofra distorção ou zoom */
+}
