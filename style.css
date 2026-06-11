@@ -89,6 +89,31 @@ body.theme-claro .preview-card-box {
 
 body.theme-claro .btn-google:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important; }
 
+/* ==========================================
+   AJUSTE DE CONTRASTE: TEXTOS DA SIDEBAR NO TEMA CLARO
+   ========================================== */
+
+/* Escurece o texto e o ícone das categorias principais da sidebar */
+body.theme-claro .category-toggle {
+    color: #050505 !important;
+}
+
+/* Escurece o texto das subcategorias (links internos das pastas) */
+body.theme-claro .tree-sub li {
+    color: #1f1f1f !important;
+}
+
+/* Garante que o texto em negrito (como o "Vídeos Recentes") também fique legível */
+body.theme-claro .tree-sub li b {
+    color: #000000 !important;
+}
+
+/* Melhora a legibilidade do texto de sugestão (placeholder) dentro do campo de filtro local */
+body.theme-claro .sidebar-search input::placeholder {
+    color: #4a4a4a !important;
+}
+
+
 
 /* ==========================================
    RESET E CONFIGURAÇÕES GERAIS
