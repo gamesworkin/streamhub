@@ -726,31 +726,28 @@ body.theme-claro .theme-switcher-float {
 }
 
 /* ==========================================
-   PROPORÇÃO NATIVA 4:3 E 16:9 SEM ZOOM NO MOBILE
+   TRUQUE DO RECORTE PARA EMBEDS DO DRIVE NO MOBILE
    ========================================== */
 
 .player-content {
     position: relative;
     width: 100% !important;
-    padding-top: 56.25% !important; /* Mantém a caixa do player em 16:9 */
+    padding-top: 56.25% !important; /* Proporção 16:9 */
     height: 0 !important;
-    overflow: hidden !important; 
-    background: #000; /* Fundo preto esconde as sobras */
+    overflow: hidden !important; /* Corta tudo o que sair das bordas */
+    background: #000;
 }
 
-/* Centraliza o vídeo perfeitamente sem deformar ou esticar mídias antigas */
+/* Faz o iframe ficar ligeiramente maior e joga a barra branca para fora da área visível */
 .player-content iframe#universal-player {
     position: absolute !important;
-    top: 0 !important; /* Voltamos para o topo zero para tirar o zoom de corte */
+    top: -45px !important; /* EMPURRA A BARRA BRANCA DO TOPO PARA FORA DA TELA */
     left: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100% + 45px) !important; /* COMPENSA O TAMANHO NO FINAL */
     border: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    
-    /* A mágica para o Google Drive respeitar formatos nativos (4:3 ou 16:9) */
-    object-fit: contain !important; 
 }
 
 
