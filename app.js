@@ -479,7 +479,7 @@ function playTrack(index) {
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
             }
-                        // 3. TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
+                        // 3. NOVA TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
             else if (urlTratada.includes("drive.google.com/file/d/")) {
                 // Mantém o link original de preview e adiciona travas para não fugir da página
                 const separador = urlTratada.includes("?") ? "&" : "?";
