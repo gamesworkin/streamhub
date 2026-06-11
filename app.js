@@ -487,11 +487,12 @@ function playTrack(index) {
             }
             
             univPlayerEl.src = urlTratada; 
-        } 
 
+         }  
+             }
 
 }
-
+ 
 function extractYoutubeId(url) {
     if (!url || url.includes('videoseries')) return null; 
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\/shorts\/)([^#\&\?]*).*/; const match = url.match(regExp);
