@@ -725,22 +725,28 @@ body.theme-claro .theme-switcher-float {
     background: #000;
 }
 
-/* Força o iframe a ignorar os controles fantasmas do navegador Android */
+/* ==========================================
+   TRUQUE DO RECORTE PARA EMBEDS DO DRIVE NO MOBILE
+   ========================================== */
+
+.player-content {
+    position: relative;
+    width: 100% !important;
+    padding-top: 56.25% !important; /* Proporção 16:9 */
+    height: 0 !important;
+    overflow: hidden !important; /* Corta tudo o que sair das bordas */
+    background: #000;
+}
+
+/* Faz o iframe ficar ligeiramente maior e joga a barra branca para fora da área visível */
 .player-content iframe#universal-player {
     position: absolute !important;
-    top: 0 !important;
+    top: -45px !important; /* EMPURRA A BARRA BRANCA DO TOPO PARA FORA DA TELA */
     left: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: calc(100% + 45px) !important; /* COMPENSA O TAMANHO NO FINAL */
     border: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    
-    /* Desativa interações de controles nativos do Chrome Mobile */
-    pointer-events: auto !important;
-    -webkit-media-controls-panel {
-        display: none !important;
-    }
 }
-
 
