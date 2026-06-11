@@ -698,24 +698,43 @@ body.theme-claro .theme-switcher-float {
     .theme-btn-toggle { width: 30px; height: 30px; font-size: 0.75rem; }
 }
 
-/* ==========================================
-   CORREÇÃO DE RESPONSIVIDADE PARA EMBEDS (DRIVE/UNIVERSAL)
+/* /* ==========================================
+   CORREÇÃO DEFINITIVA PARA EMBEDS DO DRIVE NO MOBILE
    ========================================== */
-.player-content iframe#universal-player {
+
+/* Garante que o contêiner do player seja uma caixa de proporção 16:9 perfeita */
+.player-content {
+    position: relative;
     width: 100% !important;
-    height: 100% !important;
-    position: absolute;
-    top: 0;
-    left: 0;
+    padding-top: 56.25% !important; /* Força a proporção de cinema 16:9 */
+    height: 0 !important;
+    overflow: hidden !important; /* Corta qualquer conteúdo que tente vazar (zoom) */
+    background: #000;
 }
 
-/* Garante que em telas pequenas o player não deforme os controles internos do Google */
+/* Força o iframe do Google Drive a se esticar e se moldar estritamente dentro da caixa */
+.player-content iframe#universal-player {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ajustes específicos para telas de celulares */
 @media (max-width: 768px) {
-    .floating-player {
-        height: auto !important;
+    #player-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
     }
-    .player-content {
-        padding-top: 56.25%; /* Mantém a proporção 16:9 perfeita */
+    
+    .floating-player {
+        width: 100% !important;
+        height: auto !important;
     }
 }
 
