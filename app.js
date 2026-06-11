@@ -461,10 +461,10 @@ function playTrack(index) {
             setTimeout(() => aplicarVolume(), 300); 
         }
     } 
-        else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent') || linkOriginal.includes('docs.google.com/uc?export=download')) {
+    else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent') || linkOriginal.includes('docs.google.com/uc?export=download')) {
         if (rawPlayerEl) { rawPlayerEl.classList.remove('hidden'); rawPlayerEl.src = linkOriginal; rawPlayerEl.play(); aplicarVolume(); rawPlayerEl.onended = () => { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }; }
     } 
-                else { 
+    else { 
         if (univPlayerEl) { 
             univPlayerEl.classList.remove('hidden'); 
             
@@ -491,8 +491,6 @@ function playTrack(index) {
     }
 } 
 
-}
- 
 function extractYoutubeId(url) {
     if (!url || url.includes('videoseries')) return null; 
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\/shorts\/)([^#\&\?]*).*/; const match = url.match(regExp);
@@ -732,9 +730,6 @@ function handleToggleSidebar() {
     else { sidebar.classList.toggle('collapsed'); sidebar.classList.remove('open'); }
 }
 
-// ==========================================
-// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
-// ==========================================
 function switchTabs(targetTabId, activeTriggerBtnId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
@@ -744,6 +739,9 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
+// ==========================================
+// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
+// ==========================================
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
 
@@ -866,14 +864,14 @@ function setupEventListeners() {
             if (!termo) return;
 
             lastLocalSearchResults = database.filter(item => {
-    const titulo = item.título || item.titulo || ""; // aceita com ou sem acento
-    const categoria = item.categoria || item.Categoria || "";
-    const subcategoria = item.subcategoria || "";
+                const titulo = item.título || item.titulo || ""; 
+                const categoria = item.categoria || item.Categoria || "";
+                const subcategoria = item.subcategoria || "";
 
-    return titulo.toLowerCase().includes(termo) || 
-           categoria.toLowerCase().includes(termo) || 
-           subcategoria.toLowerCase().includes(termo);
-});
+                return titulo.toLowerCase().includes(termo) || 
+                       categoria.toLowerCase().includes(termo) || 
+                       subcategoria.toLowerCase().includes(termo);
+            });
 
             currentView = 'search_local_results';
             renderMosaic();
