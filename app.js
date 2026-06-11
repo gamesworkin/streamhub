@@ -479,9 +479,12 @@ function playTrack(index) {
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
             }
-            // 3. NOVA TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
+                        // 3. NOVA TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
             else if (urlTratada.includes("drive.google.com/file/d/")) {
-                // Força o Google Drive a aceitar o enquadramento inline no celular sem redirecionar
+                // Se o link terminar com /preview, adicionamos parâmetros para forçar a interface mobile do Drive
+                if(urlTratada.endsWith('/preview')) {
+                    urlTratada = urlTratada.replace('/preview', '/preview?vq=medium&rm=minimal');
+                }
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&origin=${window.location.origin}`;
             }
