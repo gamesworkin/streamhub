@@ -699,7 +699,7 @@ body.theme-claro .theme-switcher-float {
 }
 
 /* ==========================================
-   CORREÇÃO DE RESPONSIVIDADE PARA EMbeds (DRIVE/UNIVERSAL)
+   CORREÇÃO DE RESPONSIVIDADE PARA EMBEDS (DRIVE/UNIVERSAL)
    ========================================== */
 .player-content iframe#universal-player {
     width: 100% !important;
@@ -707,5 +707,15 @@ body.theme-claro .theme-switcher-float {
     position: absolute;
     top: 0;
     left: 0;
-    object-fit: contain; /* Evita que o vídeo sofra distorção ou zoom */
 }
+
+/* Garante que em telas pequenas o player não deforme os controles internos do Google */
+@media (max-width: 768px) {
+    .floating-player {
+        height: auto !important;
+    }
+    .player-content {
+        padding-top: 56.25%; /* Mantém a proporção 16:9 perfeita */
+    }
+}
+
