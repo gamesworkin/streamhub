@@ -741,7 +741,7 @@ body.theme-claro .theme-switcher-float {
 /* Faz o iframe ficar ligeiramente maior e joga a barra branca para fora da área visível */
 .player-content iframe#universal-player {
     position: absolute !important;
-    top: 0 !important; /* EMPURRA A BARRA BRANCA DO TOPO PARA FORA DA TELA */
+    top: -25px !important; /* EMPURRA A BARRA BRANCA DO TOPO PARA FORA DA TELA */
     left: 0 !important;
     width: 100% !important;
     height: calc(100% + 45px) !important; /* COMPENSA O TAMANHO NO FINAL */
