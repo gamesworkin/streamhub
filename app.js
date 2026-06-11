@@ -464,26 +464,32 @@ function playTrack(index) {
         else if(linkOriginal.toLowerCase().endsWith('.mp4') || linkOriginal.toLowerCase().endsWith('.mkv') || linkOriginal.toLowerCase().includes('raw.githubusercontent') || linkOriginal.includes('docs.google.com/uc?export=download')) {
         if (rawPlayerEl) { rawPlayerEl.classList.remove('hidden'); rawPlayerEl.src = linkOriginal; rawPlayerEl.play(); aplicarVolume(); rawPlayerEl.onended = () => { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }; }
     } 
-        else { 
+            else { 
         if (univPlayerEl) { 
             univPlayerEl.classList.remove('hidden'); 
             
             let urlTratada = linkOriginal;
             
-            // Se for link do Archive.org, faz a conversão padrão que você já tinha
+            // 1. Tratamento para links do Archive.org
             if (urlTratada.includes("archive.org/details/")) {
                 urlTratada = urlTratada.replace("archive.org/details/", "archive.org/embed/");
             } 
-            // Se for uma Playlist do YouTube carregada no player universal, injeta as travas mobile
+            // 2. Tratamento para Playlists do YouTube no player universal
             else if (urlTratada.includes("youtube.com/embed/videoseries")) {
-                // Se a URL já tiver parâmetros, adiciona com '&', se não, com '?'
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
+            }
+            // 3. NOVA TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
+            else if (urlTratada.includes("drive.google.com/file/d/")) {
+                // Força o Google Drive a aceitar o enquadramento inline no celular sem redirecionar
+                const separador = urlTratada.includes("?") ? "&" : "?";
+                urlTratada = `${urlTratada}${separador}playsinline=1&origin=${window.location.origin}`;
             }
             
             univPlayerEl.src = urlTratada; 
         } 
-    }
+
+
 }
 
 function extractYoutubeId(url) {
