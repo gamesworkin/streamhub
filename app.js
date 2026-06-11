@@ -908,4 +908,4 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarEventosLogin();
     setupEventListeners();
     checkSession();
-});
+}); 
