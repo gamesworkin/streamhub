@@ -1,5 +1,5 @@
 // ==========================================
-// CONFIGURAÇÃO INICIAL E CREDENCIAIS DO FIREBASE
+// CONFIGURAÇÃO INICIAL DO FIREBASE (APENAS CHAVES PÚBLICAS)
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
@@ -15,25 +15,12 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// Provedor de Autenticação do Google
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-const USERS_DATABASE = {
-    "diego@midias.com": { 
-        defaultColor: "#11ffcf",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/midias.json",
-        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
-    },
-    "diego@canais.com": { 
-        defaultColor: "#ff0000",
-        firebaseUrl: "https://workin--music-default-rtdb.firebaseio.com/canais.json",
-        ytApiKey: "AIzaSyD2x7SjdblFqlxQdKHlgfSZA5Nmjb1QbMk"
-    },
-};
-
+// Configurações globais dinâmicas (alimentadas via Firebase de acordo com o UID)
 let CONFIG = { YT_API_KEY: "", FIREBASE_URL: "" };
 
-let currentUser = "";
+let currentUserUid = "";
 let database = [];
 let canaisDinamicos = {};
 let currentView = 'categories'; 
@@ -43,7 +30,7 @@ let currentPlaylist = [];
 let currentTrackIndex = 0;
 let ytPlayer = null;
 let lastYtSearchResults = [];
-let lastLocalSearchResults = []; // Guarda os resultados da busca interna do acervo
+let lastLocalSearchResults = []; 
 let activeEditingIndex = null;
 let canalSelecionadoProvisorio = null;
 
@@ -56,7 +43,6 @@ function obterUrlNodoItem(idItem = null) {
 }
 
 function obterUrlBaseCanais() {
-    // Substitui 'midias.json' por 'canais_dinamicos.json' na URL atual do usuário
     return CONFIG.FIREBASE_URL.replace("midias.json", "canais_dinamicos.json");
 } 
 
@@ -77,41 +63,57 @@ function posicionarSetaPelaCor(hexColor) {
     if(hexColor.toLowerCase() === "#00f0ff") selector.style.left = "50%";
 }
 
-function carregarTemaDoUsuarioLogado(usuario) {
-    let corSalva = localStorage.getItem(`streamhub_theme_${usuario}`);
-    if(corSalva) { aplicarCorTema(corSalva); posicionarSetaPelaCor(corSalva); } 
-    else {
-        let corPadrao = USERS_DATABASE[usuario] ? USERS_DATABASE[usuario].defaultColor : "#ff0000";
-        aplicarCorTema(corPadrao); posicionarSetaPelaCor(corPadrao);
-    }
-    let visualSalvo = localStorage.getItem(`streamhub_layout_mode_${usuario}`);
-    if(visualSalvo) { document.body.className = visualSalvo; } else { document.body.className = ""; }
+// Salva as preferências de customização direto no nó do usuário no Firebase
+async function salvarPreferenciaNoFirebase(dadosModificados) {
+    if (!currentUserUid) return;
+    try {
+        await fetch(`https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}.json`, {
+            method: "PATCH",
+            body: JSON.stringify(dadosModificados),
+            headers: { 'Content-Type': 'application/json' }
+        });
+    } catch (e) { console.error("Erro ao salvar preferências na nuvem:", e); }
 }
 
 function checkSession() {
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user && user.email) {
-            const emailLogado = user.email.toLowerCase();
+    firebase.auth().onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUserUid = user.uid;
             
-            // 1. Verifica se é um usuário do login convencional (antigo)
-            if (USERS_DATABASE[emailLogado]) {
-                currentUser = emailLogado;
-                CONFIG.FIREBASE_URL = USERS_DATABASE[currentUser].firebaseUrl;
-                CONFIG.YT_API_KEY = USERS_DATABASE[currentUser].ytApiKey;
-            } 
-            // 2. Se não estiver no USERS_DATABASE, significa que logou pelo Google!
-            else {
-                currentUser = emailLogado;
-                // Cria um nó exclusivo usando o UID do Firebase para evitar conflitos e caracteres proibidos
-                CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${user.uid}/midias.json`;
+            try {
+                // Busca o perfil do usuário diretamente na nuvem de forma segura usando o UID
+                let resPerfil = await fetch(`https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}.json`);
+                let perfil = await resPerfil.json();
                 
-                // Usamos uma API Key padrão para os usuários do Google (pode usar a do Diego Mídias como fallback)
-                CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"; 
+                // Se o perfil não existir (Ex: novo usuário via Google), cria os padrões na hora
+                if (!perfil) {
+                    perfil = {
+                        cor_tema: "#ff0000",
+                        tema: "",
+                        firebaseUrl: `https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}/midias.json`,
+                        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+                    };
+                    await salvarPreferenciaNoFirebase(perfil);
+                }
+                
+                // Alimenta os parâmetros operacionais do app
+                CONFIG.FIREBASE_URL = perfil.firebaseUrl;
+                CONFIG.YT_API_KEY = perfil.ytApiKey;
+                
+                // Aplica o visual salvo no banco de dados (Sincronização em nuvem)
+                aplicarCorTema(perfil.cor_tema || "#ff0000");
+                posicionarSetaPelaCor(perfil.cor_tema || "#ff0000");
+                document.body.className = perfil.tema || "";
+                
+            } catch (err) {
+                console.error("Erro ao inicializar perfil seguro:", err);
+                // Fallback de segurança caso a API falhe na inicialização
+                CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}/midias.json`;
+                CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ";
             }
             
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            carregarTemaDoUsuarioLogado(user.uid); 
             initApp();
             return;
         }
@@ -136,7 +138,6 @@ function handleLogin() {
     const inputEmail = elUser.value.trim().toLowerCase();
     const inputPass = elPass.value.trim();
     if (!inputEmail || !inputPass) return alert("Preencha todos os campos!");
-    if (!USERS_DATABASE[inputEmail]) return alert("Este utilizador não possui perfil configurado!");
     
     const btnLogin = document.getElementById('btn-login');
     btnLogin.innerText = "Autenticando..."; btnLogin.disabled = true;
@@ -154,7 +155,7 @@ function handleLogoutActions() {
 
 function limparInterfaceLocal() {
     document.body.className = ""; 
-    currentUser = ""; CONFIG.FIREBASE_URL = ""; CONFIG.YT_API_KEY = "";
+    currentUserUid = ""; CONFIG.FIREBASE_URL = ""; CONFIG.YT_API_KEY = "";
     if (ytPlayer) { try { ytPlayer.stopVideo(); } catch(e){} }
     if (document.getElementById('universal-player')) document.getElementById('universal-player').src = "";
     if (document.getElementById('raw-player')) { document.getElementById('raw-player').pause(); document.getElementById('raw-player').src = ""; }
@@ -319,9 +320,6 @@ async function buscarVideosRecentesDoCanal(playlistId) {
     } catch (e) { if (grid) grid.innerHTML = '<h3>Erro ao carregar feeds do canal.</h3>'; }
 }
 
-// ==========================================
-// CANAIS DINÂMICOS - AGORA COM SCROLL DE 10 RESULTADOS
-// ==========================================
 function configurarEventosBuscaCanal() {
     const input = document.getElementById("search-channel-input");
     const btnSearchChan = document.getElementById("btn-search-channel");
@@ -470,20 +468,23 @@ function playTrack(index) {
             
             let urlTratada = linkOriginal;
             
-            // 1. Tratamento para links do Archive.org
             if (urlTratada.includes("archive.org/details/")) {
                 urlTratada = urlTratada.replace("archive.org/details/", "archive.org/embed/");
             } 
-            // 2. Tratamento para Playlists do YouTube no player universal
             else if (urlTratada.includes("youtube.com/embed/videoseries")) {
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
             }
-                        // 3. NOVA TRAVA MOBILE: Tratamento para embeds do Google Drive (/preview)
             else if (urlTratada.includes("drive.google.com/file/d/")) {
-                // Mantém o link original de preview e adiciona travas para não fugir da página
+                if (urlTratada.includes("/preview")) {
+                    urlTratada = urlTratada.replace("/preview", "/preview?rm=minimal");
+                } else if (!urlTratada.includes("?")) {
+                    urlTratada += "?rm=minimal";
+                } else if (!urlTratada.includes("rm=minimal")) {
+                    urlTratada += "&rm=minimal";
+                }
                 const separador = urlTratada.includes("?") ? "&" : "?";
-                urlTratada = `${urlTratada}${separador}playsinline=1&origin=${window.location.origin}`;
+                urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
             }
             
             univPlayerEl.src = urlTratada; 
@@ -497,7 +498,6 @@ function extractYoutubeId(url) {
     if (match && match[2].length === 11) return match[2]; if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim(); return null;
 }
 
-// --- MOTOR DE VOLUME ---
 function aplicarVolume() {
     const slider = document.getElementById('player-volume-slider');
     const btnMute = document.getElementById('btn-mute-toggle');
@@ -574,7 +574,6 @@ function createCrudRow(title, type, onEdit, onDel, onExp) {
     row.querySelector('.btn-del').onclick = (e) => { e.stopPropagation(); onDel(); }; row.querySelector('.btn-exp').onclick = (e) => { e.stopPropagation(); onExp(); }; return row;
 }
 
-// CORREÇÃO AUXILIAR: Renomear Categorias dinamicamente no Firebase
 async function renomearCategoriaCompleta(antiga, nova) { 
     try { 
         database.forEach(item => { if(item.categoria === antiga) item.categoria = nova; }); 
@@ -714,7 +713,11 @@ function inicializarSeletorCoresLinear() {
         let core1 = coresGradiente[index]; let cor2 = coresGradiente[index + 1] || coresGradiente[index];
         let rgb1 = hexToRgb(core1); let rgb2 = hexToRgb(cor2);
         let r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r)); let g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g)); let b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
-        let hexResult = rgbToHex(r, g, b); aplicarCorTema(hexResult); if(currentUser) localStorage.setItem(`streamhub_theme_${currentUser}`, hexResult);
+        let hexResult = rgbToHex(r, g, b); 
+        aplicarCorTema(hexResult); 
+        
+        // Sincroniza a nova cor escolhida na nuvem em tempo real
+        salvarPreferenciaNoFirebase({ cor_tema: hexResult });
     }
     function hexToRgb(hex) { let num = parseInt(hex.replace("#",""), 16); return { r: num >> 16, g: (num >> 8) & 0x00FF, b: num & 0x0000FF }; }
     function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
@@ -739,14 +742,10 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
-// ==========================================
-// DELEGAÇÃO GLOBAL DE EVENTOS (À PROVA DE FALHAS)
-// ==========================================
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
 
     document.addEventListener('click', async (e) => {
-        // --- NAVEGAÇÃO SUPERIOR ---
         if (e.target.closest('#toggle-sidebar')) handleToggleSidebar();
         if (e.target.closest('#bc-root') || e.target.closest('#bc-home')) { currentView = 'categories'; selectedCategory=''; selectedSubcategory=''; renderMosaic(); }
         if (e.target.closest('#bc-category')) { currentView = 'subcategories'; selectedSubcategory=''; renderMosaic(); }
@@ -756,7 +755,6 @@ function setupEventListeners() {
             if(row) { row.classList.toggle('hidden'); if(!row.classList.contains('hidden')) document.getElementById('search-yt-input-mobile').focus(); }
         }
         
-        // --- LOGIN COM O GOOGLE ---
         if (e.target.closest('#btn-google-login')) {
             const btnGoogle = e.target.closest('#btn-google-login');
             btnGoogle.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Conectando...';
@@ -770,7 +768,6 @@ function setupEventListeners() {
                 });
         }
 
-        // --- ABAS E MODAL ADMIN ---
         if (e.target.closest('#btn-open-admin')) { 
             document.getElementById('admin-modal')?.classList.remove('hidden'); 
             switchTabs('add-tab', 'tab-trigger-add'); renderCrudManager(); 
@@ -816,10 +813,14 @@ function setupEventListeners() {
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
         }
         if (e.target.closest('#btn-reset-theme')) {
-            if(currentUser) { localStorage.removeItem(`streamhub_theme_${currentUser}`); let c = USERS_DATABASE[currentUser] ? USERS_DATABASE[currentUser].defaultColor : "#ff0000"; aplicarCorTema(c); posicionarSetaPelaCor(c); }
+            if(currentUserUid) {
+                // Ao dar reset, devolve as configurações padrão para a nuvem
+                let padrao = { cor_tema: "#ff0000" };
+                aplicarCorTema("#ff0000"); posicionarSetaPelaCor("#ff0000");
+                salvarPreferenciaNoFirebase(padrao);
+            }
         }
 
-        // --- CONTROLES DO PLAYER ---
         if (e.target.closest('#btn-next-track')) { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }
         if (e.target.closest('#btn-prev-track')) { if(currentTrackIndex > 0) playTrack(currentTrackIndex - 1); }
         if (e.target.closest('#btn-close-player')) {
@@ -833,29 +834,24 @@ function setupEventListeners() {
             aplicarVolume();
         }
 
-        // --- TEMAS VISUAIS ---
+        // --- SISTEMA DE SELEÇÃO DE TEMA SINCRO EM NUVEM ---
         const themeBtn = e.target.closest('[id^="theme-switch-"]');
         if (themeBtn) {
             const tema = themeBtn.id.replace('theme-switch-', '');
             const className = tema === 'youtube' ? "" : `theme-${tema}`;
             document.body.className = className;
-            if(currentUser) localStorage.setItem(`streamhub_layout_mode_${currentUser}`, className);
+            // Atualiza o tema do usuário direto no Realtime Database
+            salvarPreferenciaNoFirebase({ tema: className });
         }
     });
 
-    // Filtros e Inputs (Eventos de teclado)
     document.getElementById('search-yt-input')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
     document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
     
     document.getElementById('search-internal-input')?.addEventListener('input', (e) => {
         const termo = e.target.value.trim();
         filterInternalDatabase(termo);
-        if (termo === "") {
-            currentView = 'categories';
-            selectedCategory = '';
-            selectedSubcategory = '';
-            renderMosaic();
-        }
+        if (termo === "") { currentView = 'categories'; selectedCategory = ''; selectedSubcategory = ''; renderMosaic(); }
     });
 
     document.getElementById('search-internal-input')?.addEventListener('keypress', (e) => {
@@ -867,22 +863,14 @@ function setupEventListeners() {
                 const titulo = item.título || item.titulo || ""; 
                 const categoria = item.categoria || item.Categoria || "";
                 const subcategoria = item.subcategoria || "";
-
-                return titulo.toLowerCase().includes(termo) || 
-                       categoria.toLowerCase().includes(termo) || 
-                       subcategoria.toLowerCase().includes(termo);
+                return titulo.toLowerCase().includes(termo) || categoria.toLowerCase().includes(termo) || subcategoria.toLowerCase().includes(termo);
             });
 
-            currentView = 'search_local_results';
-            renderMosaic();
-            
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar')?.classList.remove('open');
-            }
+            currentView = 'search_local_results'; renderMosaic();
+            if (window.innerWidth <= 768) document.getElementById('sidebar')?.classList.remove('open');
         }
     });
 
-    // Importar via arquivo JSON
     document.getElementById('file-import-json')?.addEventListener('change', (e) => {
         const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
         reader.onload = async (evt) => {
@@ -890,7 +878,6 @@ function setupEventListeners() {
         }; reader.readAsText(file);
     });
 
-    // Controle de volume slider
     document.addEventListener('input', (e) => {
         if (e.target.id === 'player-volume-slider') {
             const btnMute = document.getElementById('btn-mute-toggle');
@@ -903,9 +890,9 @@ function setupEventListeners() {
     inicializarSeletorCoresLinear();
 }
 
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO DO ECOSSISTEMA
 document.addEventListener('DOMContentLoaded', () => {
     configurarEventosLogin();
     setupEventListeners();
     checkSession();
-}); 
+});
