@@ -776,4 +776,49 @@ body.theme-claro .theme-switcher-float {
    object-fit: contain !important;
 }
 
+/* ==========================================
+   MIGRAÇÃO DO MOSAICO MOBILE PARA 3 COLUNAS
+   ========================================== */
+@media (max-width: 768px) {
+    #mosaic-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+        padding: 10px !important;
+    }
+
+    #mosaic-grid .card {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 6px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+    }
+
+    #mosaic-grid .card img {
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 16/9 !important;
+        object-fit: cover !important;
+        border-radius: 4px !important;
+    }
+
+    #mosaic-grid .card h4 {
+        font-size: 0.75rem !important;
+        margin-top: 5px !important;
+        line-height: 1.1rem !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    #mosaic-grid .card .media-type-badge,
+    #mosaic-grid .card .quick-edit-badge {
+        font-size: 0.6rem !important;
+        padding: 2px 4px !important;
+    }
+}
 
