@@ -805,11 +805,11 @@ body.theme-claro .theme-switcher-float {
     }
 
     #mosaic-grid .card h4 {
-        font-size: 0.75rem !important;
+        font-size: 0.85rem !important;
         margin-top: 5px !important;
-        line-height: 1.1rem !important;
+        line-height: 1.2rem !important;
         display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
+        -webkit-line-clamp: 3 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
