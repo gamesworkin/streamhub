@@ -1,5 +1,5 @@
 // ==========================================
-// CONFIGURAÇÃO INICIAL DO FIREBASE (APENAS CHAVES PÚBLICAS)
+// CONFIGURAÇÃO INICIAL E CREDENCIAIS DO APP
 // ==========================================
 const firebaseConfig = {
     apiKey: "AIzaSyA3obnKmTrF4zH6pdV8ogqZ88r7uACy3BI", 
@@ -11,14 +11,17 @@ const firebaseConfig = {
     appId: "1:588256543173:web:eddf01b30628df90ca8bac"
 };
 
+// CHAVE DE API GLOBAL DO YOUTUBE (PROTEGIDA POR RESTRIÇÃO DE DOMÍNIO HTTP)
+const YT_API_KEY_GLOBAL = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ";
+
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-// Configurações globais dinâmicas (alimentadas via Firebase de acordo com o UID)
-let CONFIG = { YT_API_KEY: "", FIREBASE_URL: "" };
+// Configurações globais dinâmicas (A URL do banco continua vindo por usuário)
+let CONFIG = { YT_API_KEY: YT_API_KEY_GLOBAL, FIREBASE_URL: "" };
 
 let currentUserUid = "";
 let database = [];
@@ -94,15 +97,14 @@ function checkSession() {
                     perfil = {
                         cor_tema: "#ff0000",
                         tema: "",
-                        firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`,
-                        ytApiKey: "AIzaSyDHkLh2vGgxUJpVo11o1kKqtH1DQ5Toeu4"
+                        firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`
                     };
                     await salvarPreferenciaNoFirebase(perfil);
                 }
                 
-                // Alimenta os parâmetros operacionais do app
+                // Alimenta os parâmetros operacionais do app (A API Key agora é sempre travada na do topo)
                 CONFIG.FIREBASE_URL = perfil.firebaseUrl;
-                CONFIG.YT_API_KEY = perfil.ytApiKey;
+                CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
                 
                 // Aplica o visual salvo no banco de dados (Sincronização em nuvem)
                 aplicarCorTema(perfil.cor_tema || "#ff0000");
@@ -112,8 +114,8 @@ function checkSession() {
             } catch (err) {
                 console.error("Erro ao inicializar perfil seguro:", err);
                 // Fallback de segurança caso a API falhe na inicialização
-                CONFIG.FIREBASE_URL = `https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}/midias.json`;
-                CONFIG.YT_API_KEY = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ";
+                CONFIG.FIREBASE_URL = `${firebaseConfig.databaseURL.replace(/\/$/, "")}/usuarios/${currentUserUid}/midias.json`;
+                CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
             }
             
             document.getElementById('login-screen').classList.add('hidden');
@@ -159,7 +161,7 @@ function handleLogoutActions() {
 
 function limparInterfaceLocal() {
     document.body.className = ""; 
-    currentUserUid = ""; CONFIG.FIREBASE_URL = ""; CONFIG.YT_API_KEY = "";
+    currentUserUid = ""; CONFIG.FIREBASE_URL = ""; CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
     if (ytPlayer) { try { ytPlayer.stopVideo(); } catch(e){} }
     if (document.getElementById('universal-player')) document.getElementById('universal-player').src = "";
     if (document.getElementById('raw-player')) { document.getElementById('raw-player').pause(); document.getElementById('raw-player').src = ""; }
@@ -502,6 +504,7 @@ function extractYoutubeId(url) {
     if (match && match[2].length === 11) return match[2]; if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim(); return null;
 }
 
+// --- MOTOR DE VOLUME ---
 function aplicarVolume() {
     const slider = document.getElementById('player-volume-slider');
     const btnMute = document.getElementById('btn-mute-toggle');
@@ -698,7 +701,7 @@ async function deletarCategoriaCompleta(cat) {
     } catch(e){ console.error("Erro ao deletar categoria completa:", e); } 
 }
 
-async function renomearSubcategoriaCompleta(cat, antigaSub, novaSub) { try { database.forEach(item => { if(item.categoria === cat && item.subcategoria === antigaSub) item.subcategoria = novaSub; }); await empurrarBancoIntegralParaServidor(); await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
+async function renameSubcategoryComplete(cat, antigaSub, novaSub) { try { database.forEach(item => { if(item.categoria === cat && item.subcategoria === antigaSub) item.subcategoria = novaSub; }); await empurrarBancoIntegralParaServidor(); await recarregarDadosDoBanco(); renderCrudManager(); } catch(e){} }
 
 function downloadJSON(obj, filename) {
     const prepararObjeto = Array.isArray(obj) ? obj.map(({idFirebase, ...r}) => r) : obj;
@@ -846,21 +849,17 @@ function setupEventListeners() {
         }
     });
 
-    // --- CORREÇÃO DA BUSCA GLOBAL DO YOUTUBE (DESKTOP E MOBILE) ---
     const tratarBuscaGlobal = (e) => {
         if (e.key === 'Enter' || e.type === 'change') {
             const termo = e.target.value.trim();
             if (termo) {
                 searchYouTubeGlobal(termo);
-                // Esconde o teclado virtual no celular tirando o foco do elemento
                 e.target.blur(); 
-                // Fecha a barra de pesquisa mobile expansiva se estiver aberta
                 document.getElementById('mobile-search-row')?.classList.add('hidden');
             }
         }
     };
 
-    // Escuta tanto a digitação com Enter quanto o botão de confirmação do celular
     document.getElementById('search-yt-input')?.addEventListener('keypress', tratarBuscaGlobal);
     document.getElementById('search-yt-input')?.addEventListener('change', tratarBuscaGlobal);
 
