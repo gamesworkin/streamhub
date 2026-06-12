@@ -82,7 +82,7 @@ function checkSession() {
             currentUserUid = user.uid;
             
             try {
-                                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
+                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
                 const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
 
                 // Busca o perfil do usuário de forma 100% dinâmica baseada no projeto do topo
@@ -818,7 +818,6 @@ function setupEventListeners() {
         }
         if (e.target.closest('#btn-reset-theme')) {
             if(currentUserUid) {
-                // Ao dar reset, devolve as configurações padrão para a nuvem
                 let padrao = { cor_tema: "#ff0000" };
                 aplicarCorTema("#ff0000"); posicionarSetaPelaCor("#ff0000");
                 salvarPreferenciaNoFirebase(padrao);
@@ -838,19 +837,35 @@ function setupEventListeners() {
             aplicarVolume();
         }
 
-        // --- SISTEMA DE SELEÇÃO DE TEMA SINCRO EM NUVEM ---
         const themeBtn = e.target.closest('[id^="theme-switch-"]');
         if (themeBtn) {
             const tema = themeBtn.id.replace('theme-switch-', '');
             const className = tema === 'youtube' ? "" : `theme-${tema}`;
             document.body.className = className;
-            // Atualiza o tema do usuário direto no Realtime Database
             salvarPreferenciaNoFirebase({ tema: className });
         }
     });
 
-    document.getElementById('search-yt-input')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
-    document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', (e) => { if(e.key === 'Enter') searchYouTubeGlobal(e.target.value); });
+    // --- CORREÇÃO DA BUSCA GLOBAL DO YOUTUBE (DESKTOP E MOBILE) ---
+    const tratarBuscaGlobal = (e) => {
+        if (e.key === 'Enter' || e.type === 'change') {
+            const termo = e.target.value.trim();
+            if (termo) {
+                searchYouTubeGlobal(termo);
+                // Esconde o teclado virtual no celular tirando o foco do elemento
+                e.target.blur(); 
+                // Fecha a barra de pesquisa mobile expansiva se estiver aberta
+                document.getElementById('mobile-search-row')?.classList.add('hidden');
+            }
+        }
+    };
+
+    // Escuta tanto a digitação com Enter quanto o botão de confirmação do celular
+    document.getElementById('search-yt-input')?.addEventListener('keypress', tratarBuscaGlobal);
+    document.getElementById('search-yt-input')?.addEventListener('change', tratarBuscaGlobal);
+
+    document.getElementById('search-yt-input-mobile')?.addEventListener('keypress', tratarBuscaGlobal);
+    document.getElementById('search-yt-input-mobile')?.addEventListener('change', tratarBuscaGlobal);
     
     document.getElementById('search-internal-input')?.addEventListener('input', (e) => {
         const termo = e.target.value.trim();
