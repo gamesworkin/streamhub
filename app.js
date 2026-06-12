@@ -63,11 +63,12 @@ function posicionarSetaPelaCor(hexColor) {
     if(hexColor.toLowerCase() === "#00f0ff") selector.style.left = "50%";
 }
 
-// Salva as preferências de customização direto no nó do usuário no Firebase
+// Salva as preferências de customização respeitando o projeto configurado no topo
 async function salvarPreferenciaNoFirebase(dadosModificados) {
-    if (!currentUserUid) return;
+    if (!currentUserUid || !firebaseConfig.databaseURL) return;
     try {
-        await fetch(`https://workin--music-default-rtdb.firebaseio.com/usuarios/${currentUserUid}.json`, {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`, {
             method: "PATCH",
             body: JSON.stringify(dadosModificados),
             headers: { 'Content-Type': 'application/json' }
