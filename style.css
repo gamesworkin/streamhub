@@ -782,7 +782,7 @@ body.theme-claro .theme-switcher-float {
 @media (max-width: 768px) {
     #mosaic-grid {
         display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
         padding: 10px !important;
     }
