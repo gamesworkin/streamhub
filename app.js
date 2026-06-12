@@ -95,7 +95,7 @@ function checkSession() {
                         cor_tema: "#ff0000",
                         tema: "",
                         firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`,
-                        ytApiKey: "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ"
+                        ytApiKey: "AIzaSyDNHqERli0UuPqruQwd2UPIBg7nikrjqNE"
                     };
                     await salvarPreferenciaNoFirebase(perfil);
                 }
