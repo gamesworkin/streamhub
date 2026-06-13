@@ -19,32 +19,65 @@
          TELA DE LOGIN INDEPENDENTE
          ========================================== -->
     <div id="login-screen" class="login-container">
-        <div class="login-box">
-            <div class="login-logo-wrapper">
-                <img src="logo.png" width="128" height="128" alt="Logo StreamHub" class="login-logo-img">
+    <div class="login-box">
+        
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="logo.png" alt="Logo StreamHub" style="max-width: 100px; height: auto; margin-bottom: 10px;">
+            <h2 id="login-title" style="margin: 0;">StreamHub</h2>
+        </div>
+        
+        <form id="form-login-fluxo">
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="login-user" placeholder="E-mail" required>
             </div>
-            <h2>StreamHub</h2>
-            <form id="form-login">
-                <div class="input-group">
-                    <label for="login-user">E-mail</label>
-                    <input type="email" id="login-user" placeholder="Ex: meunome@meuemail.com" required autocomplete="email">
-                </div>
-                <div class="input-group">
-                    <label for="login-pass">Senha</label>
-                    <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
-                </div>
-                <button type="submit" id="btn-login" class="btn-primary">Entrar</button>
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="login-pass" placeholder="Senha" required>
+            </div>
+            <button type="button" id="btn-login" class="btn-primary">Entrar</button>
+            
+            <div style="margin: 15px 0; text-align: center; color: var(--text-gray); font-size: 0.9rem;">ou</div>
+            
+            <button type="button" id="btn-google-login" class="btn-google">
+                <i class="fab fa-google"></i> Entrar com o Google
+            </button>
 
-<div class="login-separator">
-    <span>ou</span>
+            <p class="toggle-login-p" style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: #fff;">
+                Não tem uma conta? <a href="#" onclick="alternarAbasLogin('cadastro')" style="color: var(--theme-color); font-weight: bold; text-decoration: none;">Cadastre-se</a>
+            </p>
+        </form>
+
+        <form id="form-cadastro-fluxo" class="hidden">
+            <div class="input-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="register-name" placeholder="Nome" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-user-friends"></i>
+                <input type="text" id="register-lastname" placeholder="Sobrenome" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="register-email" placeholder="E-mail" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="register-pass" placeholder="Senha (mínimo 6 caracteres)" required>
+            </div>
+            <div class="input-group">
+                <i class="fas fa-check-double"></i>
+                <input type="password" id="register-pass-confirm" placeholder="Confirme a Senha" required>
+            </div>
+            <button type="button" id="btn-register-submit" class="btn-primary">Criar Minha Conta</button>
+
+            <p class="toggle-login-p" style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: #fff;">
+                Já tem uma conta? <a href="#" onclick="alternarAbasLogin('login')" style="color: var(--theme-color); font-weight: bold; text-decoration: none;">Faça Login</a>
+            </p>
+        </form>
+    </div>
 </div>
 
-<button type="button" id="btn-google-login" class="btn-google">
-    <i class="fab fa-google"></i> Entrar com o Google
-</button>
-            </form>
-        </div>
-    </div>
 
     <!-- ==========================================
          CONTAINER PRINCIPAL DO APLICATIVO
@@ -64,7 +97,12 @@
                     <input type="text" id="search-yt-input" placeholder="Pesquisar vídeos ou playlists no YouTube...">
                 </div>
             </div>
-            
+
+            <div id="user-profile-display" class="user-top-badge hidden">
+                <i class="fas fa-user-circle"></i>
+                <span id="user-top-name">Olá!</span>
+            </div>
+
             <div class="header-right">
                 <button id="btn-toggle-search-mobile" class="btn-icon btn-mobile-only" title="Pesquisar"><i class="fas fa-search"></i></button>
                 <button id="btn-open-admin" class="btn-admin" title="Administração"><i class="fas fa-cog"></i> Admin</button>
