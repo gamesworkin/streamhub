@@ -313,22 +313,46 @@
             <button onclick="fecharModalPerfil()" style="background: transparent; border: none; color: #fff; font-size: 1.2rem; cursor: pointer;"><i class="fas fa-times"></i></button>
         </div>
         
-        <form id="form-edit-perfil">
+                <form id="form-edit-perfil">
+            <!-- CAMPO NOME -->
             <div class="admin-input-group" style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 0.85rem;">Nome</label>
                 <input type="text" id="profile-edit-name" class="admin-input" style="width: 100%; padding: 10px; border-radius: 4px; background: #2c3e50; color: #fff; border: 1px solid #34495e;" required>
             </div>
             
-            <div class="admin-input-group" style="margin-bottom: 20px;">
+            <!-- CAMPO SOBRENOME -->
+            <div class="admin-input-group" style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 0.85rem;">Sobrenome</label>
                 <input type="text" id="profile-edit-lastname" class="admin-input" style="width: 100%; padding: 10px; border-radius: 4px; background: #2c3e50; color: #fff; border: 1px solid #34495e;" required>
             </div>
+
+            <!-- SELEÇÃO DE TEMA (DARK / LIGHT / RED) -->
+            <div class="admin-input-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 0.85rem;">Tema de Fundo</label>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" id="theme-switch-youtube" class="tab-btn" style="flex: 1; padding: 6px; font-size: 0.8rem;"><i class="fab fa-youtube"></i> Padrão</button>
+                    <button type="button" id="theme-switch-dark" class="tab-btn" style="flex: 1; padding: 6px; font-size: 0.8rem;"><i class="fas fa-moon"></i> Dark</button>
+                    <button type="button" id="theme-switch-light" class="tab-btn" style="flex: 1; padding: 6px; font-size: 0.8rem;"><i class="fas fa-sun"></i> Light</button>
+                </div>
+            </div>
+
+            <!-- SELETOR DE COR DO TEMA (ESPECTRO LINEAR) -->
+            <div class="admin-input-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 0.85rem;">Cor de Destaque (<span id="theme-color-hex">#FF0000</span>)</label>
+                <!-- Reaproveita a barra de cores existente no app -->
+                <div id="color-spectrum-bar" style="position: relative; width: 100%; height: 20px; border-radius: 4px; background: linear-gradient(to right, #000, #f00, #f0f, #00f, #0ff, #0f0, #ff0, #f00, #fff); cursor: crosshair; margin-bottom: 5px;">
+                    <div id="color-spectrum-selector" style="position: absolute; top: -2px; left: 12%; width: 4px; height: 24px; background: #fff; border: 1px solid #000; border-radius: 2px;"></div>
+                </div>
+                <button type="button" id="btn-reset-theme" style="background: transparent; border: none; color: var(--text-gray); font-size: 0.75rem; cursor: pointer; padding: 0;"><i class="fas fa-undo"></i> Resetar para cor padrão</button>
+            </div>
             
+            <!-- BOTÕES DE AÇÃO -->
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button type="button" onclick="fecharModalPerfil()" style="background: #7f8c8d; border: none; color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancelar</button>
-                <button type="button" id="btn-save-profile-changes" style="background: var(--theme-color); border: none; color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar Alterações</button>
+                <button type="button" onclick="fecharModalPerfil()" style="background: #7f8c8d; border: none; color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;">Cancelar</button>
+                <button type="button" id="btn-save-profile-changes" style="background: var(--theme-color); border: none; color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.9rem;">Salvar Alterações</button>
             </div>
         </form>
+
     </div>
 </div>
 
