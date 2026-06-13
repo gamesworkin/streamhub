@@ -40,6 +40,36 @@ let canalSelecionadoProvisorio = null;
 let expandedCrudCats = {};
 let expandedCrudSubs = {};
 
+// Abre o modal de perfil e preenche os campos com os dados atuais salvos no banco
+async function abrirModalPerfil() {
+    if (!currentUserUid) return;
+    
+    // Se o aviso de novidade na tela estiver aberto, remove ele
+    document.getElementById('alert-novidade-perfil')?.remove();
+
+    try {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        let res = await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`);
+        let perfil = await res.json();
+        
+        if (perfil) {
+            document.getElementById('profile-edit-name').value = perfil.nome || "";
+            document.getElementById('profile-edit-lastname').value = perfil.sobrenome || "";
+        }
+        
+        // Exibe o modal removendo a classe hidden
+        document.getElementById('profile-modal')?.classList.remove('hidden');
+    } catch (e) {
+        console.error("Erro ao carregar dados do perfil para edição:", e);
+    }
+}
+
+// Fecha a janela de edição de perfil
+function fecharModalPerfil() {
+    document.getElementById('profile-modal')?.classList.add('hidden');
+}
+
+
 // Alterna visualmente entre os formulários de login e cadastro preservando a logo
 function alternarAbasLogin(modo) {
     const formLogin = document.getElementById('form-login-fluxo');
@@ -945,6 +975,47 @@ function setupEventListeners() {
         }
     });
 
+        // SALVAR ALTERAÇÕES DE NOME E SOBRENOME DO PERFIL
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('#btn-save-profile-changes')) {
+            e.preventDefault();
+            
+            const novoNome = document.getElementById('profile-edit-name').value.trim();
+            const novoSobrenome = document.getElementById('profile-edit-lastname').value.trim();
+            
+            if (!novoNome || !novoSobrenome) {
+                return alert("Os campos Nome e Sobrenome não podem ficar vazios!");
+            }
+            
+            const btnSaveProf = document.getElementById('btn-save-profile-changes');
+            btnSaveProf.innerText = "Salvando..."; btnSaveProf.disabled = true;
+            
+            try {
+                // Monta o payload de atualização
+                const dadosAtualizados = {
+                    nome: novoNome,
+                    sobrenome: novoSobrenome
+                };
+                
+                // Atualiza em tempo real no Realtime Database do projeto ativo
+                await salvarPreferenciaNoFirebase(dadosAtualizados);
+                
+                // Atualiza imediatamente a interface visual do topo
+                const elTxt = document.getElementById('user-top-name');
+                if (elTxt) elTxt.innerText = `Olá, ${novoNome}!`;
+                
+                alert("Perfil atualizado com sucesso!");
+                fecharModalPerfil();
+                
+            } catch (err) {
+                alert("Erro ao salvar alterações do perfil: " + err.message);
+            } finally {
+                btnSaveProf.innerText = "Salvar Alterações"; btnSaveProf.disabled = false;
+            }
+        }
+    });
+
+    
     const tratarBuscaGlobal = (e) => {
         if (e.key === 'Enter' || e.type === 'change') {
             const termo = e.target.value.trim();
