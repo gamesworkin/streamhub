@@ -821,4 +821,42 @@ body.theme-claro .theme-switcher-float {
         padding: 2px 4px !important;
     }
 }
+/* ==========================================
+   ESTILOS DO NOVO SISTEMA DE PERFIS E CADASTRO
+   ========================================== */
+.user-top-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: #fff;
+    font-weight: 500;
+    margin-right: 10px;
+}
+.user-top-badge i {
+    color: var(--theme-color);
+    font-size: 1.1rem;
+}
+/* Alerta flutuante de novidade amigável */
+.alert-novidade-box {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #2c3e50;
+    border-left: 5px solid var(--theme-color);
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 4px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    z-index: 9999;
+    max-width: 320px;
+    animation: slideInUp 0.4s ease;
+}
+@keyframes slideInUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
 
