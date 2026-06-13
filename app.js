@@ -171,20 +171,26 @@ function checkSession() {
                         elTxt.innerText = `Olá, ${perfil.nome}!`;
                         elBadge.classList.remove('hidden');
                     }
-                } else {
-                    // AVISO DE NOVIDADE: Caso seja um usuário antigo e os campos estejam nulos
+                                } else {
+                    // AVISO DE NOVIDADE: Clicável para abrir o modal direto
                     if(!document.getElementById('alert-novidade-perfil')) {
                         const aviso = document.createElement('div');
                         aviso.className = 'alert-novidade-box';
                         aviso.id = 'alert-novidade-perfil';
+                        aviso.style.cursor = 'pointer';
+                        // Ao clicar em qualquer lugar do balão (exceto no botão fechar), abre o perfil
+                        aviso.onclick = (e) => {
+                            if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
+                        };
                         aviso.innerHTML = `
                             <div style="font-weight:bold; margin-bottom:5px;">Novidade no StreamHub! 🎉</div>
-                            <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome e sobrenome. Acesse as configurações assim que o menu de edição estiver pronto!</p>
-                            <button onclick="document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Entendido</button>
+                            <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome, sobrenome e tema. <strong>Clique aqui para configurar!</strong></p>
+                            <button onclick="event.stopPropagation(); document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Fechar</button>
                         `;
                         document.body.appendChild(aviso);
                     }
                 }
+
                 
             } catch (err) {
                 console.error("Erro ao inicializar perfil seguro:", err);
