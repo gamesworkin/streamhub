@@ -292,6 +292,22 @@ function renderMosaic() {
     }
 }
 
+// Alterna entre exibir o select de categorias existentes ou o input para nova categoria
+function alternarModoCategoriaCanal(modo) {
+    const wrapExistente = document.getElementById('wrapper-channel-cat-existente');
+    const wrapNova = document.getElementById('wrapper-channel-cat-nova');
+    
+    if (modo === 'nova') {
+        wrapExistente.classList.add('hidden');
+        wrapNova.classList.remove('hidden');
+        document.getElementById('channel-target-category-new').focus();
+    } else {
+        wrapNova.classList.add('hidden');
+        wrapExistente.classList.remove('hidden');
+    }
+}
+
+
 function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, clickCallback, realIndex = -1) {
     const card = document.createElement('div'); card.className = 'card';
     let htmlContent = `<img src="${imgSrc || 'https://placehold.co/160x90?text=Sem+Capa'}"><h4>${title}</h4>`;
@@ -790,18 +806,52 @@ function setupEventListeners() {
         if (e.target.closest('#btn-cancel-edit-media') || e.target.closest('#btn-cancel-edit-media-2')) {
             document.getElementById('edit-media-modal')?.classList.add('hidden');
         }
-        if (e.target.closest('#btn-save-channel-link')) {
-            const catDestino = document.getElementById("channel-target-category")?.value; 
-            if(!canalSelecionadoProvisorio || !catDestino) return alert("Selecione um canal e uma categoria.");
+                if (e.target.closest('#btn-save-channel-link')) {
+            // Descobre qual modo de categoria está selecionado (existente ou nova)
+            const modoSelecionado = document.querySelector('input[name="cat-mode-channel"]:checked')?.value || 'existente';
+            let catDestino = "";
+
+            if (modoSelecionado === 'nova') {
+                catDestino = document.getElementById("channel-target-category-new")?.value.trim();
+            } else {
+                catDestino = document.getElementById("channel-target-category")?.value;
+            }
+
+            if(!canalSelecionadoProvisorio || !catDestino) {
+                return alert("Por favor, selecione um canal e defina/selecione uma categoria válida.");
+            }
+
             try {
-                const payload = { channelId: canalSelecionadoProvisorio.channelId, uploadsPlaylistId: canalSelecionadoProvisorio.channelId.replace(/^UC/, "UU"), title: canalSelecionadoProvisorio.title, thumb: canalSelecionadoProvisorio.thumb };
+                const payload = { 
+                    channelId: canalSelecionadoProvisorio.channelId, 
+                    uploadsPlaylistId: canalSelecionadoProvisorio.channelId.replace(/^UC/, "UU"), 
+                    title: canalSelecionadoProvisorio.title, 
+                    thumb: canalSelecionadoProvisorio.thumb 
+                };
+                
                 const nodeName = btoa(unescape(encodeURIComponent(catDestino))).replace(/=/g, "");
                 let urlCanalIndividual = obterUrlBaseCanais().replace(".json", `/${nodeName}.json`);
+                
                 await fetch(urlCanalIndividual, { method: "PUT", body: JSON.stringify(payload) });
-                alert("Canal vinculado!"); document.getElementById("channel-preview").style.display = "none"; document.getElementById('search-channel-input').value = "";
-                canalSelecionadoProvisorio = null; initApp();
-            } catch(err) { alert("Erro ao salvar canal."); }
+                
+                alert(`Canal vinculado com sucesso na categoria "${catDestino}"!`);
+                
+                // Limpa e resgata os controles para o estado original
+                document.getElementById("channel-preview").style.display = "none"; 
+                document.getElementById('search-channel-input').value = "";
+                if(document.getElementById('channel-target-category-new')) document.getElementById('channel-target-category-new').value = "";
+                
+                // Volta o rádio para o modo "existente" padrão
+                const radExistente = document.querySelector('input[name="cat-mode-channel"][value="existente"]');
+                if(radExistente) { radExistente.checked = true; alternarModoCategoriaCanal('existente'); }
+
+                canalSelecionadoProvisorio = null; 
+                initApp();
+            } catch(err) { 
+                alert("Erro ao salvar canal: " + err.message); 
+            }
         }
+
 
         if (e.target.closest('#btn-fetch-manual')) {
             const url = document.getElementById('manual-media-url').value.trim(); if(!url) return alert("Insira uma URL.");
