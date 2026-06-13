@@ -40,6 +40,9 @@ let canalSelecionadoProvisorio = null;
 let expandedCrudCats = {};
 let expandedCrudSubs = {};
 
+// Variável local para rastrear as mudanças temporárias de cor do perfil
+let corPerfilTemporaria = "";
+
 // Abre o modal de perfil e preenche os campos com os dados atuais salvos no banco
 async function abrirModalPerfil() {
     if (!currentUserUid) return;
@@ -55,6 +58,14 @@ async function abrirModalPerfil() {
         if (perfil) {
             document.getElementById('profile-edit-name').value = perfil.nome || "";
             document.getElementById('profile-edit-lastname').value = perfil.sobrenome || "";
+            
+            // Inicializa a cor padrão baseada no que está na nuvem
+            corPerfilTemporaria = perfil.cor_tema || "#ff0000";
+            const txtHexPerfil = document.getElementById('profile-theme-color-hex');
+            if(txtHexPerfil) txtHexPerfil.innerText = corPerfilTemporaria.toUpperCase();
+            
+            const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
+            if(selectorPerfil) selectorPerfil.style.left = "50%"; // Posiciona no centro por padrão no carregamento
         }
         
         // Exibe o modal removendo a classe hidden
@@ -68,7 +79,6 @@ async function abrirModalPerfil() {
 function fecharModalPerfil() {
     document.getElementById('profile-modal')?.classList.add('hidden');
 }
-
 
 // Alterna visualmente entre os formulários de login e cadastro preservando a logo
 function alternarAbasLogin(modo) {
@@ -87,7 +97,6 @@ function alternarAbasLogin(modo) {
     }
 }
 
-
 function obterUrlNodoItem(idItem = null) {
     let urlSemJson = CONFIG.FIREBASE_URL.replace(".json", "");
     return idItem ? `${urlSemJson}/${idItem}.json` : CONFIG.FIREBASE_URL;
@@ -104,8 +113,13 @@ function aplicarCorTema(hexColor) {
     r = r < 0 ? 0 : r; g = g < 0 ? 0 : g; b = b < 0 ? 0 : b;
     let hexHover = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     document.documentElement.style.setProperty('--theme-color-hover', hexHover);
+    
+    // Atualiza os textos de código hexadecimal tanto no Admin quanto no Perfil
     const txtHex = document.getElementById('theme-color-hex');
     if(txtHex) txtHex.innerText = hexColor.toUpperCase();
+    
+    const txtHexPerfil = document.getElementById('profile-theme-color-hex');
+    if(txtHexPerfil) txtHexPerfil.innerText = hexColor.toUpperCase();
 }
 
 function posicionarSetaPelaCor(hexColor) {
@@ -164,21 +178,21 @@ function checkSession() {
                 document.body.className = perfil.tema || "";
                 
                 // EXIBE O NOME ELEGANTE NO TOPO DO SITE
-                if (perfil.nome) {
+                if (perfil.nome && perfil.nome !== "Usuário") {
                     const elBadge = document.getElementById('user-profile-display');
                     const elTxt = document.getElementById('user-top-name');
                     if(elBadge && elTxt) {
                         elTxt.innerText = `Olá, ${perfil.nome}!`;
                         elBadge.classList.remove('hidden');
                     }
-                                } else {
+                } else {
                     // AVISO DE NOVIDADE: Clicável para abrir o modal direto
                     if(!document.getElementById('alert-novidade-perfil')) {
                         const aviso = document.createElement('div');
                         aviso.className = 'alert-novidade-box';
                         aviso.id = 'alert-novidade-perfil';
                         aviso.style.cursor = 'pointer';
-                        // Ao clicar em qualquer lugar do balão (exceto no botão fechar), abre o perfil
+                        
                         aviso.onclick = (e) => {
                             if(e.target.tagName !== 'BUTTON') abrirModalPerfil();
                         };
@@ -190,7 +204,6 @@ function checkSession() {
                         document.body.appendChild(aviso);
                     }
                 }
-
                 
             } catch (err) {
                 console.error("Erro ao inicializar perfil seguro:", err);
@@ -206,7 +219,6 @@ function checkSession() {
         limparInterfaceLocal();
     });
 }
-
 
 function configurarEventosLogin() {
     const inputUser = document.getElementById('login-user');
@@ -389,7 +401,6 @@ function alternarModoCategoriaCanal(modo) {
     }
 }
 
-
 function createCard(title, imgSrc, showAddButton = false, isPlaylist = false, clickCallback, realIndex = -1) {
     const card = document.createElement('div'); card.className = 'card';
     let htmlContent = `<img src="${imgSrc || 'https://placehold.co/160x90?text=Sem+Capa'}"><h4>${title}</h4>`;
@@ -528,6 +539,75 @@ async function peekPlaylistContents(playlistId) {
     } catch(e) { alert("Erro playlist."); }
 }
 
+// SALVA AS CONFIGURAÇÕES DE CORES DA PALETA GERAL OU DO PERFIL
+function inicializarSeletorCoresLinear() {
+    const barAdmin = document.getElementById('color-spectrum-bar'); 
+    const selectorAdmin = document.getElementById('color-spectrum-selector');
+    const barPerfil = document.getElementById('profile-color-spectrum-bar');
+    const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
+
+    const coresGradiente = ["#000000", "#ff0000", "#ff00ff", "#0000ff", "#00ffff", "#00ff00", "#ffff00", "#ff0000", "#ffffff"];
+    let isDragging = false;
+
+    function hexToRgb(hex) { let num = parseInt(hex.replace("#",""), 16); return { r: num >> 16, g: (num >> 8) & 0x00FF, b: num & 0x0000FF }; }
+    function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
+
+    function calcularCorPelaPosicao(e, barElement, selectorElement, ehPerfil) {
+        if (!barElement || !selectorElement) return;
+        const rect = barElement.getBoundingClientRect(); 
+        let clientX = e.clientX || (e.touches && e.touches[0].clientX); 
+        let x = clientX - rect.left;
+        
+        if (x < 0) x = 0; 
+        if (x > rect.width) x = rect.width; 
+        let percent = x / rect.width; 
+        selectorElement.style.left = (percent * 100) + '%';
+        
+        let segment = percent * (coresGradiente.length - 1); 
+        let index = Math.floor(segment); 
+        let factor = segment - index;
+        let core1 = coresGradiente[index]; 
+        let cor2 = coresGradiente[index + 1] || coresGradiente[index];
+        let rgb1 = hexToRgb(core1); 
+        let rgb2 = hexToRgb(cor2);
+        
+        let r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r)); 
+        let g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g)); 
+        let b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
+        let hexResult = rgbToHex(r, g, b); 
+        
+        if (ehPerfil) {
+            // No perfil, guarda na variável para salvar apenas quando clicar em concluir
+            corPerfilTemporaria = hexResult;
+            const txtHexPerfil = document.getElementById('profile-theme-color-hex');
+            if (txtHexPerfil) txtHexPerfil.innerText = hexResult.toUpperCase();
+        } else {
+            // No Admin, altera direto e já grava em nuvem em tempo real
+            aplicarCorTema(hexResult); 
+            salvarPreferenciaNoFirebase({ cor_tema: hexResult });
+        }
+    }
+
+    // Configuração de Eventos para o Painel Admin original
+    if (barAdmin) {
+        barAdmin.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); });
+        document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); });
+        barAdmin.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); }, {passive: true});
+        document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); }, {passive: true});
+    }
+
+    // Configuração de Eventos Exclusivos para a barra do Perfil de Usuário
+    if (barPerfil) {
+        barPerfil.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); });
+        document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); });
+        barPerfil.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); }, {passive: true});
+        document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); }, {passive: true});
+    }
+
+    document.addEventListener('mouseup', () => isDragging = false);
+    document.addEventListener('touchend', () => isDragging = false);
+}
+
 function openAdminWithTrack(item) {
     if (document.getElementById('admin-modal')) document.getElementById('admin-modal').classList.remove('hidden'); switchTabs('add-tab', 'tab-trigger-add');
     document.getElementById('manual-media-url').value = item.type === 'playlist' ? `https://www.youtube.com/playlist?list=${item.youtubeId}` : `https://www.youtube.com/embed/${item.youtubeId}`;
@@ -569,7 +649,6 @@ function playTrack(index) {
     else { 
         if (univPlayerEl) { 
             univPlayerEl.classList.remove('hidden'); 
-            
             let urlTratada = linkOriginal;
             
             if (urlTratada.includes("archive.org/details/")) {
@@ -590,7 +669,6 @@ function playTrack(index) {
                 const separador = urlTratada.includes("?") ? "&" : "?";
                 urlTratada = `${urlTratada}${separador}playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
             }
-            
             univPlayerEl.src = urlTratada; 
         } 
     }
@@ -602,7 +680,6 @@ function extractYoutubeId(url) {
     if (match && match[2].length === 11) return match[2]; if (url.trim().length === 11 && !url.includes('/') && !url.includes('.')) return url.trim(); return null;
 }
 
-// --- MOTOR DE VOLUME ---
 function aplicarVolume() {
     const slider = document.getElementById('player-volume-slider');
     const btnMute = document.getElementById('btn-mute-toggle');
@@ -808,30 +885,6 @@ function downloadJSON(obj, filename) {
     document.body.appendChild(a); a.click(); a.remove();
 }
 
-function inicializarSeletorCoresLinear() {
-    const bar = document.getElementById('color-spectrum-bar'); const selector = document.getElementById('color-spectrum-selector'); if (!bar || !selector) return;
-    let isDragging = false; const coresGradiente = ["#000000", "#ff0000", "#ff00ff", "#0000ff", "#00ffff", "#00ff00", "#ffff00", "#ff0000", "#ffffff"];
-    function calcularCorPelaPosicao(e) {
-        const rect = bar.getBoundingClientRect(); let clientX = e.clientX || (e.touches && e.touches[0].clientX); let x = clientX - rect.left;
-        if (x < 0) x = 0; if (x > rect.width) x = rect.width; let percent = x / rect.width; selector.style.left = (percent * 100) + '%';
-        let segment = percent * (coresGradiente.length - 1); let index = Math.floor(segment); let factor = segment - index;
-        let core1 = coresGradiente[index]; let cor2 = coresGradiente[index + 1] || coresGradiente[index];
-        let rgb1 = hexToRgb(core1); let rgb2 = hexToRgb(cor2);
-        let r = Math.round(rgb1.r + factor * (rgb2.r - rgb1.r)); let g = Math.round(rgb1.g + factor * (rgb2.g - rgb1.g)); let b = Math.round(rgb1.b + factor * (rgb2.b - rgb1.b));
-        let hexResult = rgbToHex(r, g, b); 
-        aplicarCorTema(hexResult); 
-        
-        // Sincroniza a nova cor escolhida na nuvem em tempo real
-        salvarPreferenciaNoFirebase({ cor_tema: hexResult });
-    }
-    function hexToRgb(hex) { let num = parseInt(hex.replace("#",""), 16); return { r: num >> 16, g: (num >> 8) & 0x00FF, b: num & 0x0000FF }; }
-    function rgbToHex(r, g, b) { return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1); }
-    bar.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e); });
-    document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e); }); document.addEventListener('mouseup', () => isDragging = false);
-    bar.addEventListener('touchstart', (e) => { isDragging = true; calcularCorPelaPosicao(e); }, {passive: true});
-    document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e); }, {passive: true}); document.addEventListener('touchend', () => isDragging = false);
-}
-
 function handleToggleSidebar() {
     const sidebar = document.getElementById('sidebar'); if (!sidebar) return;
     if (window.innerWidth <= 768) { sidebar.classList.toggle('open'); sidebar.classList.remove('collapsed'); }
@@ -888,8 +941,8 @@ function setupEventListeners() {
         if (e.target.closest('#btn-cancel-edit-media') || e.target.closest('#btn-cancel-edit-media-2')) {
             document.getElementById('edit-media-modal')?.classList.add('hidden');
         }
-                if (e.target.closest('#btn-save-channel-link')) {
-            // Descobre qual modo de categoria está selecionado (existente ou nova)
+        
+        if (e.target.closest('#btn-save-channel-link')) {
             const modoSelecionado = document.querySelector('input[name="cat-mode-channel"]:checked')?.value || 'existente';
             let catDestino = "";
 
@@ -918,12 +971,10 @@ function setupEventListeners() {
                 
                 alert(`Canal vinculado com sucesso na categoria "${catDestino}"!`);
                 
-                // Limpa e resgata os controles para o estado original
                 document.getElementById("channel-preview").style.display = "none"; 
                 document.getElementById('search-channel-input').value = "";
                 if(document.getElementById('channel-target-category-new')) document.getElementById('channel-target-category-new').value = "";
                 
-                // Volta o rádio para o modo "existente" padrão
                 const radExistente = document.querySelector('input[name="cat-mode-channel"][value="existente"]');
                 if(radExistente) { radExistente.checked = true; alternarModoCategoriaCanal('existente'); }
 
@@ -933,7 +984,6 @@ function setupEventListeners() {
                 alert("Erro ao salvar canal: " + err.message); 
             }
         }
-
 
         if (e.target.closest('#btn-fetch-manual')) {
             const url = document.getElementById('manual-media-url').value.trim(); if(!url) return alert("Insira uma URL.");
@@ -951,12 +1001,22 @@ function setupEventListeners() {
             const val = document.getElementById('json-input-field')?.value.trim(); if(!val) return alert("Cole o código JSON");
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
         }
+        
+        // Clique do botão de reset do tema Admin clássico
         if (e.target.closest('#btn-reset-theme')) {
             if(currentUserUid) {
                 let padrao = { cor_tema: "#ff0000" };
                 aplicarCorTema("#ff0000"); posicionarSetaPelaCor("#ff0000");
                 salvarPreferenciaNoFirebase(padrao);
             }
+        }
+
+        // --- CORREÇÃO: Clique do botão de reset de tema DENTRO DO PERFIL ---
+        if (e.target.closest('#profile-btn-reset-theme')) {
+            corPerfilTemporaria = "#ff0000";
+            aplicarCorTema("#ff0000");
+            const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
+            if(selectorPerfil) selectorPerfil.style.left = "12%";
         }
 
         if (e.target.closest('#btn-next-track')) { if(currentTrackIndex + 1 < currentPlaylist.length) playTrack(currentTrackIndex + 1); }
@@ -972,6 +1032,7 @@ function setupEventListeners() {
             aplicarVolume();
         }
 
+        // Cliques dos botões flutuantes de temas originais (Switch do canto direito)
         const themeBtn = e.target.closest('[id^="theme-switch-"]');
         if (themeBtn) {
             const tema = themeBtn.id.replace('theme-switch-', '');
@@ -979,15 +1040,35 @@ function setupEventListeners() {
             document.body.className = className;
             salvarPreferenciaNoFirebase({ tema: className });
         }
+
+        // --- CORREÇÃO: Cliques nos seletores de temas DENTRO DO MODAL PERFIL ---
+        const profileThemeBtn = e.target.closest('.profile-theme-btn');
+        if (profileThemeBtn) {
+            const temaSelecionado = profileThemeBtn.getAttribute('data-theme');
+            const className = temaSelecionado === 'youtube' ? "" : `theme-${temaSelecionado}`;
+            document.body.className = className;
+            // Grava o tema imediatamente na tela para feedback visual e prepara para o payload
+            profileThemeBtn.parentElement.querySelectorAll('.profile-theme-btn').forEach(btn => btn.classList.remove('active'));
+            profileThemeBtn.classList.add('active');
+        }
     });
 
-        // SALVAR ALTERAÇÕES DE NOME E SOBRENOME DO PERFIL
+    // SALVAR ALTERAÇÕES DE NOME, SOBRENOME, COR E TEMA DO PERFIL COMPLETO
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#btn-save-profile-changes')) {
             e.preventDefault();
             
             const novoNome = document.getElementById('profile-edit-name').value.trim();
             const novoSobrenome = document.getElementById('profile-edit-lastname').value.trim();
+            
+            // Verifica qual o botão de tema ativo dentro do modal de perfil
+            const btnTemaAtivo = document.querySelector('.profile-theme-btn.active');
+            let temaFinal = document.body.className; // Pega o estado atual do body como fallback
+            
+            if (btnTemaAtivo) {
+                const dataTheme = btnTemaAtivo.getAttribute('data-theme');
+                temaFinal = dataTheme === 'youtube' ? "" : `theme-${dataTheme}`;
+            }
             
             if (!novoNome || !novoSobrenome) {
                 return alert("Os campos Nome e Sobrenome não podem ficar vazios!");
@@ -997,20 +1078,25 @@ function setupEventListeners() {
             btnSaveProf.innerText = "Salvando..."; btnSaveProf.disabled = true;
             
             try {
-                // Monta o payload de atualização
+                // Monta o payload de atualização robusto (Unifica Nome, Sobrenome, Cor e Tema de Fundo)
                 const dadosAtualizados = {
                     nome: novoNome,
-                    sobrenome: novoSobrenome
+                    sobrenome: novoSobrenome,
+                    cor_tema: corPerfilTemporaria || "#ff0000",
+                    tema: temaFinal
                 };
                 
-                // Atualiza em tempo real no Realtime Database do projeto ativo
+                // Salva tudo de uma vez só na nuvem
                 await salvarPreferenciaNoFirebase(dadosAtualizados);
                 
-                // Atualiza imediatamente a interface visual do topo
+                // Atualiza em tempo real as variáveis ativas na tela
+                aplicarCorTema(dadosAtualizados.cor_tema);
+                document.body.className = dadosAtualizados.tema;
+                
                 const elTxt = document.getElementById('user-top-name');
                 if (elTxt) elTxt.innerText = `Olá, ${novoNome}!`;
                 
-                alert("Perfil atualizado com sucesso!");
+                alert("Perfil e preferências salvos com sucesso!");
                 fecharModalPerfil();
                 
             } catch (err) {
@@ -1020,7 +1106,6 @@ function setupEventListeners() {
             }
         }
     });
-
     
     const tratarBuscaGlobal = (e) => {
         if (e.key === 'Enter' || e.type === 'change') {
@@ -1077,7 +1162,7 @@ function setupEventListeners() {
         }
     });
 
-        // PROCESSAMENTO DO CADASTRO COMPLETO DE USUÁRIOS
+    // PROCESSAMENTO DO CADASTRO COMPLETO DE USUÁRIOS
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#btn-register-submit')) {
             e.preventDefault();
@@ -1102,12 +1187,10 @@ function setupEventListeners() {
             btnReg.innerText = "Criando conta..."; btnReg.disabled = true;
             
             try {
-                // 1. Cria o registro no Firebase Authentication
                 const cred = await firebase.auth().createUserWithEmailAndPassword(email, senha);
                 const novoUid = cred.user.uid;
                 const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
                 
-                // 2. Cria imediatamente a pasta estruturada dele no Realtime Database
                 const novoPerfil = {
                     nome: nome,
                     sobrenome: sobrenome,
@@ -1124,7 +1207,6 @@ function setupEventListeners() {
                 
                 alert(`Conta criada com absoluto sucesso, ${nome}! Seja bem-vindo.`);
                 
-                // Limpa os campos de cadastro e volta pro login
                 document.getElementById('form-cadastro-fluxo').reset();
                 alternarAbasLogin('login');
                 
@@ -1135,7 +1217,6 @@ function setupEventListeners() {
             }
         }
     });
-
 
     configurarEventosBuscaCanal();
     inicializarSeletorCoresLinear();
