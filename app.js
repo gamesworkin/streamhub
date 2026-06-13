@@ -40,6 +40,24 @@ let canalSelecionadoProvisorio = null;
 let expandedCrudCats = {};
 let expandedCrudSubs = {};
 
+// Alterna visualmente entre os formulários de login e cadastro preservando a logo
+function alternarAbasLogin(modo) {
+    const formLogin = document.getElementById('form-login-fluxo');
+    const formCadastro = document.getElementById('form-cadastro-fluxo');
+    const titulo = document.getElementById('login-title');
+    
+    if (modo === 'cadastro') {
+        formLogin.classList.add('hidden');
+        formCadastro.classList.remove('hidden');
+        titulo.innerText = "Criar Conta";
+    } else {
+        formCadastro.classList.add('hidden');
+        formLogin.classList.remove('hidden');
+        titulo.innerText = "StreamHub";
+    }
+}
+
+
 function obterUrlNodoItem(idItem = null) {
     let urlSemJson = CONFIG.FIREBASE_URL.replace(".json", "");
     return idItem ? `${urlSemJson}/${idItem}.json` : CONFIG.FIREBASE_URL;
@@ -85,16 +103,20 @@ function checkSession() {
             currentUserUid = user.uid;
             
             try {
-                // Remove qualquer barra no final da URL do banco para não duplicar na concatenação
                 const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
-
-                // Busca o perfil do usuário de forma 100% dinâmica baseada no projeto do topo
                 let resPerfil = await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`);
                 let perfil = await resPerfil.json();
                 
-                // Se o perfil não existir (Ex: novo usuário via Google), cria os padrões na hora no projeto atual
+                // Se o perfil não existir (Ex: Novo usuário via Google)
                 if (!perfil) {
+                    let nomeCompleto = user.displayName || "Usuário";
+                    let partesNome = nomeCompleto.split(" ");
+                    let primeiroNome = partesNome[0];
+                    let sobrenome = partesNome.slice(1).join(" ") || "Google";
+
                     perfil = {
+                        nome: primeiroNome,
+                        sobrenome: sobrenome,
                         cor_tema: "#ff0000",
                         tema: "",
                         firebaseUrl: `${urlBaseBanco}/usuarios/${currentUserUid}/midias.json`
@@ -102,18 +124,40 @@ function checkSession() {
                     await salvarPreferenciaNoFirebase(perfil);
                 }
                 
-                // Alimenta os parâmetros operacionais do app (A API Key agora é sempre travada na do topo)
+                // Alimenta os parâmetros operacionais do app
                 CONFIG.FIREBASE_URL = perfil.firebaseUrl;
                 CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
                 
-                // Aplica o visual salvo no banco de dados (Sincronização em nuvem)
+                // Aplica o visual salvo no banco de dados
                 aplicarCorTema(perfil.cor_tema || "#ff0000");
                 posicionarSetaPelaCor(perfil.cor_tema || "#ff0000");
                 document.body.className = perfil.tema || "";
                 
+                // EXIBE O NOME ELEGANTE NO TOPO DO SITE
+                if (perfil.nome) {
+                    const elBadge = document.getElementById('user-profile-display');
+                    const elTxt = document.getElementById('user-top-name');
+                    if(elBadge && elTxt) {
+                        elTxt.innerText = `Olá, ${perfil.nome}!`;
+                        elBadge.classList.remove('hidden');
+                    }
+                } else {
+                    // AVISO DE NOVIDADE: Caso seja um usuário antigo e os campos estejam nulos
+                    if(!document.getElementById('alert-novidade-perfil')) {
+                        const aviso = document.createElement('div');
+                        aviso.className = 'alert-novidade-box';
+                        aviso.id = 'alert-novidade-perfil';
+                        aviso.innerHTML = `
+                            <div style="font-weight:bold; margin-bottom:5px;">Novidade no StreamHub! 🎉</div>
+                            <p style="font-size:0.85rem; margin:0 0 10px 0; line-height:1.2rem;">Agora você pode personalizar seu perfil com nome e sobrenome. Acesse as configurações assim que o menu de edição estiver pronto!</p>
+                            <button onclick="document.getElementById('alert-novidade-perfil').remove()" style="background:var(--theme-color); border:none; color:#fff; padding:4px 10px; border-radius:3px; cursor:pointer; font-size:0.8rem; font-weight:bold;">Entendido</button>
+                        `;
+                        document.body.appendChild(aviso);
+                    }
+                }
+                
             } catch (err) {
                 console.error("Erro ao inicializar perfil seguro:", err);
-                // Fallback de segurança caso a API falhe na inicialização
                 CONFIG.FIREBASE_URL = `${firebaseConfig.databaseURL.replace(/\/$/, "")}/usuarios/${currentUserUid}/midias.json`;
                 CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
             }
@@ -126,6 +170,7 @@ function checkSession() {
         limparInterfaceLocal();
     });
 }
+
 
 function configurarEventosLogin() {
     const inputUser = document.getElementById('login-user');
@@ -177,6 +222,7 @@ function limparInterfaceLocal() {
         document.getElementById('btn-google-login').innerHTML = '<i class="fab fa-google"></i> Entrar com o Google';
         document.getElementById('btn-google-login').disabled = false;
     }
+    if (document.getElementById('user-profile-display')) document.getElementById('user-profile-display').classList.add('hidden');
 }
 
 async function initApp() { await carregarCanaisDinamicos(); await recarregarDadosDoBanco(); }
@@ -953,6 +999,66 @@ function setupEventListeners() {
             aplicarVolume();
         }
     });
+
+        // PROCESSAMENTO DO CADASTRO COMPLETO DE USUÁRIOS
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('#btn-register-submit')) {
+            e.preventDefault();
+            
+            const nome = document.getElementById('register-name').value.trim();
+            const sobrenome = document.getElementById('register-lastname').value.trim();
+            const email = document.getElementById('register-email').value.trim().toLowerCase();
+            const senha = document.getElementById('register-pass').value.trim();
+            const senhaConfirm = document.getElementById('register-pass-confirm').value.trim();
+            
+            if(!nome || !sobrenome || !email || !senha) {
+                return alert("Por favor, preencha todos os campos do cadastro!");
+            }
+            if(senha.length < 6) {
+                return alert("A senha precisa ter no mínimo 6 caracteres!");
+            }
+            if(senha !== senhaConfirm) {
+                return alert("As senhas digitadas não batem! Verifique a confirmação.");
+            }
+            
+            const btnReg = document.getElementById('btn-register-submit');
+            btnReg.innerText = "Criando conta..."; btnReg.disabled = true;
+            
+            try {
+                // 1. Cria o registro no Firebase Authentication
+                const cred = await firebase.auth().createUserWithEmailAndPassword(email, senha);
+                const novoUid = cred.user.uid;
+                const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+                
+                // 2. Cria imediatamente a pasta estruturada dele no Realtime Database
+                const novoPerfil = {
+                    nome: nome,
+                    sobrenome: sobrenome,
+                    cor_tema: "#ff0000",
+                    tema: "",
+                    firebaseUrl: `${urlBaseBanco}/usuarios/${novoUid}/midias.json`
+                };
+                
+                await fetch(`${urlBaseBanco}/usuarios/${novoUid}.json`, {
+                    method: "PATCH",
+                    body: JSON.stringify(novoPerfil),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                alert(`Conta criada com absoluto sucesso, ${nome}! Seja bem-vindo.`);
+                
+                // Limpa os campos de cadastro e volta pro login
+                document.getElementById('form-cadastro-fluxo').reset();
+                alternarAbasLogin('login');
+                
+            } catch(error) {
+                alert("Erro ao realizar cadastro: " + error.message);
+            } finally {
+                btnReg.innerText = "Criar Minha Conta"; btnReg.disabled = false;
+            }
+        }
+    });
+
 
     configurarEventosBuscaCanal();
     inicializarSeletorCoresLinear();
