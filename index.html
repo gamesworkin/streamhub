@@ -205,7 +205,29 @@
                     </div>
                     <div class="form-group-select" style="margin-top: 15px;">
                         <label for="channel-target-category">Vincular os Vídeos Recentes na Categoria:</label>
-                        <select id="channel-target-category"></select>
+                        <div class="admin-input-group" style="margin-bottom: 15px;">
+    <label style="display: block; margin-bottom: 8px; font-weight: bold;">Categoria de Destino do Canal</label>
+    
+    <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+        <label style="cursor: pointer; font-size: 0.9rem;">
+            <input type="radio" name="cat-mode-channel" value="existente" checked onclick="alternarModoCategoriaCanal('existente')"> 
+            Selecionar Existente
+        </label>
+        <label style="cursor: pointer; font-size: 0.9rem;">
+            <input type="radio" name="cat-mode-channel" value="nova" onclick="alternarModoCategoriaCanal('nova')"> 
+            Criar Nova Categoria
+        </label>
+    </div>
+
+    <div id="wrapper-channel-cat-existente">
+        <select id="channel-target-category" class="admin-input" style="width: 100%; padding: 8px; border-radius: 4px; background: #2c3e50; color: #fff; border: 1px solid #34495e;"></select>
+    </div>
+
+    <div id="wrapper-channel-cat-nova" class="hidden">
+        <input type="text" id="channel-target-category-new" class="admin-input" placeholder="Digite o nome da nova categoria..." style="width: 100%; padding: 8px; border-radius: 4px; background: #2c3e50; color: #fff; border: 1px solid #34495e;">
+    </div>
+</div>
+
                     </div>
                     <button id="btn-save-channel-link" class="btn-success-block">Confirmar Vínculo Dinâmico</button>
                 </div>
