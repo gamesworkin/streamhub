@@ -98,7 +98,7 @@
                 </div>
             </div>
 
-            <div id="user-profile-display" class="user-top-badge hidden">
+            <div id="user-profile-display" class="user-top-badge hidden" onclick="abrirModalPerfil()" title="Clique para editar seu perfil" style="cursor: pointer;">
                 <i class="fas fa-user-circle"></i>
                 <span id="user-top-name">Olá!</span>
             </div>
@@ -306,6 +306,33 @@
         </div>
     </div>
 
+    <div id="profile-modal" class="modal hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+    <div class="admin-box" style="background: #1a252f; padding: 25px; border-radius: 8px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #34495e;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #fff; font-size: 1.2rem;"><i class="fas fa-user-edit" style="color: var(--theme-color); margin-right: 8px;"></i> Editar Meu Perfil</h3>
+            <button onclick="fecharModalPerfil()" style="background: transparent; border: none; color: #fff; font-size: 1.2rem; cursor: pointer;"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <form id="form-edit-perfil">
+            <div class="admin-input-group" style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 0.85rem;">Nome</label>
+                <input type="text" id="profile-edit-name" class="admin-input" style="width: 100%; padding: 10px; border-radius: 4px; background: #2c3e50; color: #fff; border: 1px solid #34495e;" required>
+            </div>
+            
+            <div class="admin-input-group" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 0.85rem;">Sobrenome</label>
+                <input type="text" id="profile-edit-lastname" class="admin-input" style="width: 100%; padding: 10px; border-radius: 4px; background: #2c3e50; color: #fff; border: 1px solid #34495e;" required>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="fecharModalPerfil()" style="background: #7f8c8d; border: none; color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Cancelar</button>
+                <button type="button" id="btn-save-profile-changes" style="background: var(--theme-color); border: none; color: #fff; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+    
     <!-- MODAL DE EDIÇÃO AVANÇADA -->
     <div id="edit-media-modal" class="modal-overlay hidden">
         <div class="modal-box edit-box">
