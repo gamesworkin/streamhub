@@ -59,7 +59,8 @@ body.theme-claro .modal-header h2,
 body.theme-claro .modal-header h3,
 body.theme-claro .tree-panel-crud h3,
 body.theme-claro #chan-title-text,
-body.theme-claro .crud-item span {
+body.theme-claro .crud-item span,
+body.theme-claro #profile-modal h3 {
     color: #050505 !important;
 }
 
@@ -70,7 +71,8 @@ body.theme-claro .form-row-inline input,
 body.theme-claro .preview-fields input,
 body.theme-claro .form-group-select select,
 body.theme-claro .action-card-json textarea,
-body.theme-claro .input-block input {
+body.theme-claro .input-block input,
+body.theme-claro .admin-input {
     background: #afafaf !important;
     color: #050505 !important;
     border: 1px solid #858585 !important;
@@ -82,7 +84,8 @@ body.theme-claro .card {
 
 body.theme-claro .crud-item,
 body.theme-claro .action-card-json,
-body.theme-claro .preview-card-box {
+body.theme-claro .preview-card-box,
+body.theme-claro #profile-modal .admin-box {
     background: #8c8c8c !important;
     border: 1px solid #8a8a8a !important;
 }
@@ -92,28 +95,18 @@ body.theme-claro .btn-google:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !
 /* ==========================================
    AJUSTE DE CONTRASTE: TEXTOS DA SIDEBAR NO TEMA CLARO
    ========================================== */
-
-/* Escurece o texto e o ícone das categorias principais da sidebar */
 body.theme-claro .category-toggle {
     color: #050505 !important;
 }
-
-/* Escurece o texto das subcategorias (links internos das pastas) */
 body.theme-claro .tree-sub li {
     color: #1f1f1f !important;
 }
-
-/* Garante que o texto em negrito (como o "Vídeos Recentes") também fique legível */
 body.theme-claro .tree-sub li b {
     color: #000000 !important;
 }
-
-/* Melhora a legibilidade do texto de sugestão (placeholder) dentro do campo de filtro local */
 body.theme-claro .sidebar-search input::placeholder {
     color: #4a4a4a !important;
 }
-
-
 
 /* ==========================================
    RESET E CONFIGURAÇÕES GERAIS
@@ -189,18 +182,6 @@ button:active {
     border: 1px solid var(--border-color);
 }
 
-.login-logo-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.login-logo-img {
-    object-fit: contain;
-    border-radius: 8px;
-}
-
 .login-box h2 {
     text-align: center;
     margin-bottom: 24px;
@@ -239,34 +220,6 @@ button:active {
     font-size: 1rem;
 }
 
-/* --- Inovações para o Login Alternativo com Google --- */
-
-/* Estilização da Divisória "ou" */
-.login-separator {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    margin: 15px 0;
-    color: var(--text-gray);
-    font-size: 0.85rem;
-}
-
-.login-separator::before,
-.login-separator::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.login-separator:not(:empty)::before {
-    margin-right: .5em;
-}
-
-.login-separator:not(:empty)::after {
-    margin-left: .5em;
-}
-
-/* Novo Botão customizado do Google */
 .btn-google {
     background: #ffffff !important;
     color: #1f1f1f !important;
@@ -276,17 +229,14 @@ button:active {
     justify-content: center;
     gap: 10px;
 }
-
 .btn-google:hover {
     background: #f5f5f7 !important;
     box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
 }
-
 .btn-google i {
-    color: #4285F4; /* Cor azul oficial do ícone do Google */
+    color: #4285F4;
     font-size: 1.1rem;
 }
-
 
 /* ==========================================
    2. ESTRUTURA E LAYOUT PRINCIPAL
@@ -368,29 +318,17 @@ button:active {
     padding: 15px;
     transition: width 0.3s, transform 0.3s;
     flex-shrink: 0;
-    
-    /* Ativa a rolagem vertical se o conteúdo transbordar */
     overflow-y: auto; 
-    /* Define a altura máxima baseada no cabeçalho de 60px para o cálculo ficar perfeito */
     max-height: calc(100vh - 60px); 
     position: sticky;
     top: 60px;
-
-    /* Remove a barra de rolagem visualmente no Chrome, Safari e Opera */
     -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
-
-/* Remove a barra de rolagem visualmente no Chrome, Safari e Opera para a barra lateral */
 .sidebar-panel::-webkit-scrollbar {
     display: none;
 }
-
-/* Remove a barra de rolagem visualmente no Firefox e IE/Edge */
-.sidebar-panel {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-}
-
 
 .sidebar-panel.collapsed { width: 0; padding: 0; overflow: hidden; border: none; }
 .sidebar-search input { width: 100%; padding: 8px; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-white); border-radius: 4px; margin-bottom: 15px; }
@@ -557,7 +495,6 @@ button:active {
 
 .modal-body { padding: 20px; flex: 1; overflow-y: auto; }
 
-/* ESTILIZAÇÃO DO SCROLL DOS CANAIS ENCONTRADOS */
 .channels-list-wrapper {
     max-height: 180px;
     overflow-y: auto;
@@ -636,7 +573,14 @@ button:active {
 .color-spectrum-selector { position: absolute; top: -8px; left: 50%; width: 12px; height: 38px; transform: translateX(-50%); pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
 .color-spectrum-selector i { color: #ffffff; font-size: 14px; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 .theme-preview-row { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; }
-#theme-color-hex { font-family: monospace; font-size: 0.9rem; font-weight: bold; color: var(--theme-color); }
+
+/* BARRA DE CORES EXCLUSIVA DO PERFIL */
+#profile-color-spectrum-bar {
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
+}
+#profile-color-spectrum-selector {
+    transition: left 0.1s ease;
+}
 
 /* ==========================================
    INTERFACES DE COMUTAÇÃO FLUTUANTE (SWITCH)
@@ -661,7 +605,6 @@ body.theme-claro .theme-switcher-float {
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
-/* CORREÇÕES APLICADAS AQUI: CORES DOS ÍCONES RESTAURADAS COM !IMPORTANT */
 .theme-btn-toggle {
     width: 35px;
     height: 35px;
@@ -689,15 +632,15 @@ body.theme-claro .theme-switcher-float {
     .main-wrapper:has(.floating-player:not(.hidden)) .content-body { margin-top: calc(60px + 56.25vw + 80px) !important; }
     .main-wrapper:has(.mobile-search-container:not(.hidden)):has(.floating-player:not(.hidden)) .content-body { margin-top: calc(102px + 56.25vw + 80px) !important; }
 
-        .sidebar-panel { 
+    .sidebar-panel { 
         position: fixed; 
         top: 60px; 
         left: 0; 
         height: calc(100vh - 60px); 
-        max-height: calc(100vh - 60px); /* Garante o limite no mobile */
+        max-height: calc(100vh - 60px); 
         z-index: 90; 
         transform: translateX(-100%); 
-        overflow-y: auto; /* Mantém a rolagem ativa no mobile */
+        overflow-y: auto; 
     }
 
     .sidebar-panel.open { transform: translateX(0); width: 260px; }
@@ -721,63 +664,40 @@ body.theme-claro .theme-switcher-float {
 
     .theme-switcher-float { bottom: 10px; right: 10px; padding: 6px; gap: 4px; }
     .theme-btn-toggle { width: 30px; height: 30px; font-size: 0.75rem; }
-}
-
-/* /* ==========================================
-   CORREÇÃO DEFINITIVA PARA EMBEDS DO DRIVE NO MOBILE
-   ========================================== */
-
-/* Garante que o contêiner do player seja uma caixa de proporção 16:9 perfeita */
-.player-content {
-    position: relative;
-    width: 100% !important;
-    padding-top: 56.25% !important; /* Força a proporção de cinema 16:9 */
-    height: 0 !important;
-    overflow: hidden !important; /* Corta qualquer conteúdo que tente vazar (zoom) */
-    background: #000;
+    
+    /* Força empilhamento dos controles no modal de perfil caso a tela do celular seja pequena */
+    #profile-modal .admin-box {
+        width: 95% !important;
+        padding: 15px !important;
+    }
 }
 
 /* ==========================================
-   BLINDAGEM DEFINITIVA PARA EMBEDS DO DRIVE NO MOBILE
+   CORREÇÃO DEFINITIVA PARA EMBEDS DO DRIVE NO MOBILE
    ========================================== */
-
 .player-content {
     position: relative;
     width: 100% !important;
-    padding-top: 56.25% !important; /* Proporção 16:9 perfeita */
+    padding-top: 56.25% !important; 
     height: 0 !important;
     overflow: hidden !important; 
     background: #000;
 }
 
-/* ==========================================
-   TRUQUE DO RECORTE PARA EMBEDS DO DRIVE NO MOBILE
-   ========================================== */
-
-.player-content {
-    position: relative;
-    width: 100% !important;
-    padding-top: 56.25% !important; /* Proporção 16:9 */
-    height: 0 !important;
-    overflow: hidden !important; /* Corta tudo o que sair das bordas */
-    background: #000;
-}
-
-/* Faz o iframe ficar ligeiramente maior e joga a barra branca para fora da área visível */
 .player-content iframe#universal-player {
     position: absolute !important;
-    top: -50px !important; /* EMPURRA A BARRA BRANCA DO TOPO PARA FORA DA TELA */
+    top: -50px !important; 
     left: 0 !important;
     width: 100% !important;
-    height: calc(100% + 45px) !important; /* COMPENSA O TAMANHO NO FINAL */
+    height: calc(100% + 45px) !important; 
     border: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-   object-fit: contain !important;
+    object-fit: contain !important;
 }
 
 /* ==========================================
-   MIGRAÇÃO DO MOSAICO MOBILE PARA 3 COLUNAS
+   MIGRAÇÃO DO MOSAICO MOBILE PARA 2 COLUNAS
    ========================================== */
 @media (max-width: 768px) {
     #mosaic-grid {
@@ -821,6 +741,7 @@ body.theme-claro .theme-switcher-float {
         padding: 2px 4px !important;
     }
 }
+
 /* ==========================================
    ESTILOS DO NOVO SISTEMA DE PERFIS E CADASTRO
    ========================================== */
@@ -840,6 +761,7 @@ body.theme-claro .theme-switcher-float {
     color: var(--theme-color);
     font-size: 1.1rem;
 }
+
 /* Alerta flutuante de novidade amigável */
 .alert-novidade-box {
     position: fixed;
@@ -859,4 +781,3 @@ body.theme-claro .theme-switcher-float {
     from { transform: translateY(50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
-
