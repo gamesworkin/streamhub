@@ -916,18 +916,14 @@ async function renderizarListaUsuariosPedidosExclusao() {
     
     try {
         let urlRaizLimpa = firebaseConfig.databaseURL.replace(/\/$/, "");
-        console.log("Admin tentando ler a raiz em:", `${urlRaizLimpa}/usuarios.json`);
-        
         let res = await fetch(`${urlRaizLimpa}/usuarios.json`);
         
         if (!res.ok) {
-            container.innerHTML = `<p style='color:#e74c3c; padding:10px;'>Erro de Permissão no Firebase (Status: ${res.status}). Verifique as abas de 'Rules' no console do Firebase.</p>`;
+            container.innerHTML = `<p style='color:#e74c3c; padding:10px;'>Erro de Permissão no Firebase (Status: ${res.status}).</p>`;
             return;
         }
         
         let usuarios = await res.json();
-        console.log("Dados brutos recebidos do nó /usuarios:", usuarios);
-        
         container.innerHTML = "";
         let encontrouNenhum = true;
         
@@ -935,8 +931,11 @@ async function renderizarListaUsuariosPedidosExclusao() {
             Object.keys(usuarios).forEach(uid => {
                 const userPerfil = usuarios[uid];
                 
-                // Blindagem: Aceita se estiver salvo como true (booleano) ou "true" (texto)
-                if (userPerfil && (userPerfil.solicitou_exclusao === true || userPerfil.solicitou_exclusao === "true")) {
+                // BLINDAGEM CRÍTICA: Se o perfil estiver nulo ou vazio no banco, ignora para não travar o loop
+                if (!userPerfil) return;
+                
+                // Aceita se estiver salvo como true (booleano) ou "true" (texto)
+                if (userPerfil.solicitou_exclusao === true || userPerfil.solicitou_exclusao === "true") {
                     encontrouNenhum = false;
                     
                     const row = document.createElement('div');
@@ -950,11 +949,11 @@ async function renderizarListaUsuariosPedidosExclusao() {
                     row.style.alignItems = "center";
                     
                     row.innerHTML = `
-                        <div style="display:flex; flex-direction:column; gap:2px;">
+                        <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
                             <span style="color:#fff; font-weight:bold;">${userPerfil.nome || 'Usuário Sem Nome'} ${userPerfil.sobrenome || ''}</span>
                             <span style="font-size:0.75rem; color:var(--text-gray); font-family:monospace; user-select:all;"><i class="fas fa-fingerprint"></i> UID: ${uid}</span>
                         </div>
-                        <button class="crud-btn btn-del" onclick="processarExclusaoDefinitivaPeloMaster('${uid}')" style="padding:6px 12px; font-size:0.8rem;"><i class="fas fa-user-minus"></i> Limpar Banco</button>
+                        <button class="crud-btn btn-del" onclick="processarExclusaoDefinitivaPeloMaster('${uid}')" style="padding:6px 12px; font-size:0.8rem; margin-left:10px;"><i class="fas fa-user-minus"></i> Limpar Banco</button>
                     `;
                     container.appendChild(row);
                 }
@@ -966,9 +965,10 @@ async function renderizarListaUsuariosPedidosExclusao() {
         }
     } catch(err) {
         console.error("Erro fatal na varredura admin:", err);
-        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro de rede ou falha de conexão com o banco de dados.</p>";
+        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro de rede ou falha ao processar dados do banco.</p>";
     }
 }
+
 
 
 
