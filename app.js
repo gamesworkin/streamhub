@@ -915,12 +915,18 @@ async function renderizarListaUsuariosPedidosExclusao() {
     container.innerHTML = "<p style='color:var(--text-gray); font-size:0.9rem;'>Buscando requisições no banco de dados...</p>";
     
     try {
-        // Blindagem da URL: Remove qualquer subpasta ou barra para garantir que bate na raiz do Realtime Database
         let urlRaizLimpa = firebaseConfig.databaseURL.replace(/\/$/, "");
+        console.log("Admin tentando ler a raiz em:", `${urlRaizLimpa}/usuarios.json`);
         
-        // Faz a busca mirando exatamente no nó geral de usuários
         let res = await fetch(`${urlRaizLimpa}/usuarios.json`);
+        
+        if (!res.ok) {
+            container.innerHTML = `<p style='color:#e74c3c; padding:10px;'>Erro de Permissão no Firebase (Status: ${res.status}). Verifique as abas de 'Rules' no console do Firebase.</p>`;
+            return;
+        }
+        
         let usuarios = await res.json();
+        console.log("Dados brutos recebidos do nó /usuarios:", usuarios);
         
         container.innerHTML = "";
         let encontrouNenhum = true;
@@ -928,8 +934,9 @@ async function renderizarListaUsuariosPedidosExclusao() {
         if (usuarios) {
             Object.keys(usuarios).forEach(uid => {
                 const userPerfil = usuarios[uid];
-                // Verifica se o usuário de fato marcou a opção de exclusão
-                if (userPerfil && userPerfil.solicitou_exclusao === true) {
+                
+                // Blindagem: Aceita se estiver salvo como true (booleano) ou "true" (texto)
+                if (userPerfil && (userPerfil.solicitou_exclusao === true || userPerfil.solicitou_exclusao === "true")) {
                     encontrouNenhum = false;
                     
                     const row = document.createElement('div');
@@ -937,7 +944,7 @@ async function renderizarListaUsuariosPedidosExclusao() {
                     row.style.background = "rgba(231, 76, 60, 0.1)";
                     row.style.borderLeft = "4px solid #e74c3c";
                     row.style.padding = "10px";
-                    row.style.marginSub = "5px";
+                    row.style.marginBottom = "5px";
                     row.style.display = "flex";
                     row.style.justifyContent = "space-between";
                     row.style.alignItems = "center";
@@ -958,10 +965,11 @@ async function renderizarListaUsuariosPedidosExclusao() {
             container.innerHTML = "<p style='color:var(--text-gray); padding:10px; font-size:0.9rem;'>Nenhuma solicitação pendente no momento! Seu Firebase está limpo. ✨</p>";
         }
     } catch(err) {
-        console.error("Erro na varredura administrativa:", err);
-        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro de comunicação com o Realtime Database.</p>";
+        console.error("Erro fatal na varredura admin:", err);
+        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro de rede ou falha de conexão com o banco de dados.</p>";
     }
 }
+
 
 
 // O Admin mestre limpa a pasta de dados do usuário rejeitado no banco
