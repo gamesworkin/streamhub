@@ -93,11 +93,23 @@
                 <span id="user-top-name">Olá!</span>
             </div>
 
-            <div class="header-right">
+                <div class="header-right">
                 <button id="btn-toggle-search-mobile" class="btn-icon btn-mobile-only" title="Pesquisar"><i class="fas fa-search"></i></button>
-                <button id="btn-open-admin" class="btn-admin" title="Administração"><i class="fas fa-cog"></i> Admin</button>
-                <button id="btn-logout" class="btn-logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+                
+                <button id="btn-open-admin" class="btn-admin btn-desktop-only" title="Administração"><i class="fas fa-cog"></i> Admin</button>
+                <button id="btn-logout" class="btn-logout btn-desktop-only" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+                
+                <div class="admin-dropdown-wrapper btn-mobile-only">
+                    <button id="btn-trigger-dropdown-mobile" class="btn-icon" title="Opções" style="font-size: 1.3rem; color: var(--theme-color);"><i class="fas fa-cog"></i></button>
+                    
+                    <div id="dropdown-menu-mobile" class="dropdown-content-menu hidden">
+                        <button id="btn-open-admin-mobile" class="dropdown-item-btn"><i class="fas fa-tools"></i> Painel Admin</button>
+                        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 5px 0;">
+                        <button id="btn-logout-mobile" class="dropdown-item-btn item-danger"><i class="fas fa-sign-out-alt"></i> Sair do App</button>
+                    </div>
+                </div>
             </div>
+
         </header>
 
         <div id="mobile-search-row" class="mobile-search-container hidden">
