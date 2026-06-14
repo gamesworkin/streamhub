@@ -781,3 +781,78 @@ body.theme-claro .theme-switcher-float {
     from { transform: translateY(50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+/* ==========================================
+   SISTEMA DE MENU FLUTUANTE DA ENGRENAGEM MOBILE
+   ========================================== */
+.admin-dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Caixa flutuante do menu drop-down */
+.dropdown-content-menu {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    background: var(--bg-card);
+    min-width: 160px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    z-index: 1000;
+    padding: 6px 0;
+    animation: fadeInDropdown 0.2s ease;
+}
+
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Botões de dentro do menu flutuante */
+.dropdown-item-btn {
+    width: 100%;
+    background: transparent;
+    color: var(--text-white);
+    padding: 10px 15px;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 0;
+}
+
+.dropdown-item-btn:hover {
+    background: var(--border-color);
+    color: var(--theme-color);
+}
+
+.dropdown-item-btn.item-danger {
+    color: #e74c3c;
+}
+.dropdown-item-btn.item-danger:hover {
+    background: rgba(231, 76, 60, 0.1);
+    color: #ff6b6b;
+}
+
+/* Controle de exibição por dispositivo */
+.btn-desktop-only {
+    display: block !important;
+}
+
+/* Na seção @media (max-width: 768px), o CSS abaixo vai reajustar tudo */
+@media (max-width: 768px) {
+    .btn-desktop-only {
+        display: none !important; /* Some com os botões normais espalhados */
+    }
+    .user-top-badge {
+        max-width: 120px; /* Evita que nomes gigantes empurrem o layout */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+}
