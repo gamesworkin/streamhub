@@ -212,7 +212,15 @@ function checkSession() {
             }
             
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.remove('hidden')
+                        // Libera ferramentas se logado com a conta mestre administrativa
+            const btnTabUsers = document.getElementById('tab-trigger-users');
+            if (user.email === "admin@admin.com") {
+                btnTabUsers?.classList.remove('hidden');
+            } else {
+                btnTabUsers?.classList.add('hidden');
+            }
+
             initApp();
             return;
         }
@@ -900,6 +908,70 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
+// Gera a lista de solicitações de exclusão na aba do Admin Mestre
+async function renderizarListaUsuariosPedidosExclusao() {
+    const container = document.getElementById('admin-users-request-list');
+    if (!container) return;
+    container.innerHTML = "<p style='color:var(--text-gray); font-size:0.9rem;'>Buscando requisições no banco de dados...</p>";
+    
+    try {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        let res = await fetch(`${urlBaseBanco}/usuarios.json`);
+        let usuarios = await res.json();
+        
+        container.innerHTML = "";
+        let encontrouNenhum = true;
+        
+        if (usuarios) {
+            Object.keys(usuarios).forEach(uid => {
+                const userPerfil = usuarios[uid];
+                if (userPerfil && userPerfil.solicitou_exclusao === true) {
+                    encontrouNenhum = false;
+                    
+                    const row = document.createElement('div');
+                    row.className = "crud-item";
+                    row.style.background = "rgba(231, 76, 60, 0.1)";
+                    row.style.borderLeft = "4px solid #e74c3c";
+                    row.style.padding = "10px";
+                    row.style.display = "flex";
+                    row.style.justifyContent = "space-between";
+                    row.style.alignItems = "center";
+                    
+                    row.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <span style="color:#fff; font-weight:bold;">${userPerfil.nome || 'Sem Nome'} ${userPerfil.sobrenome || ''}</span>
+                            <span style="font-size:0.75rem; color:var(--text-gray); font-family:monospace; user-select:all;"><i class="fas fa-envelope"></i> ID/E-mail do Auth: ${uid}</span>
+                        </div>
+                        <button class="crud-btn btn-del" onclick="processarExclusaoDefinitivaPeloMaster('${uid}')" style="padding:6px 12px; font-size:0.8rem;"><i class="fas fa-user-minus"></i> Limpar Banco</button>
+                    `;
+                    container.appendChild(row);
+                }
+            });
+        }
+        
+        if (encontrouNenhum) {
+            container.innerHTML = "<p style='color:var(--text-gray); padding:10px; font-size:0.9rem;'>Nenhuma solicitação pendente no momento! Seu Firebase está limpo. ✨</p>";
+        }
+    } catch(err) {
+        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro ao carregar solicitações.</p>";
+    }
+}
+
+// O Admin mestre limpa a pasta de dados do usuário rejeitado no banco
+async function processarExclusaoDefinitivaPeloMaster(uidUsuarioAlvo) {
+    if (!confirm("Atenção Admin: Deseja apagar permanentemente todas as mídias e preferências deste usuário do banco? (Lembre-se de deletar a credencial dele no painel Firebase Auth)")) return;
+    
+    try {
+        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
+        await fetch(`${urlBaseBanco}/usuarios/${uidUsuarioAlvo}.json`, { method: "DELETE" });
+        alert("Dados do Realtime Database removidos com sucesso!");
+        renderizarListaUsuariosPedidosExclusao();
+    } catch(e) {
+        alert("Erro técnico ao limpar nó do usuário.");
+    }
+}
+
+
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
 
@@ -935,6 +1007,7 @@ function setupEventListeners() {
         if (e.target.closest('#tab-trigger-add')) switchTabs('add-tab', 'tab-trigger-add');
         if (e.target.closest('#tab-trigger-channel')) switchTabs('channel-tab', 'tab-trigger-channel');
         if (e.target.closest('#tab-trigger-manage')) { switchTabs('manage-tab', 'tab-trigger-manage'); renderCrudManager(); }
+        if (e.target.closest('#tab-trigger-users')) { switchTabs('users-tab', 'tab-trigger-users'); renderizarListaUsuariosPedidosExclusao(); }
 
         if (e.target.closest('#btn-save-media')) saveMediaToDatabase(e);
         if (e.target.closest('#btn-submit-edit-media')) saveAdvancedEditChanges(e);
@@ -985,6 +1058,21 @@ function setupEventListeners() {
             }
         }
 
+                // USUÁRIO COMUM SOLICITA EXCLUSÃO DE CONTA
+        if (e.target.closest('#btn-request-delete-account')) {
+            e.preventDefault();
+            if (!confirm("Tem certeza absoluta de que deseja solicitar a exclusão da sua conta? Seu acervo e preferências serão agendados para eliminação pelo administrador.")) return;
+            
+            try {
+                await salvarPreferenciaNoFirebase({ solicitou_exclusao: true });
+                alert("Sua solicitação de exclusão foi enviada com sucesso! Você pode fechar o site ou deslogar.");
+                fecharModalPerfil();
+            } catch(err) {
+                alert("Falha ao registrar pedido.");
+            }
+        }
+
+        
         if (e.target.closest('#btn-fetch-manual')) {
             const url = document.getElementById('manual-media-url').value.trim(); if(!url) return alert("Insira uma URL.");
             const btn = e.target.closest('#btn-fetch-manual'); btn.innerText = "Buscando..."; const vId = extractYoutubeId(url);
