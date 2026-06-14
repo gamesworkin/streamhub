@@ -908,15 +908,18 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
-// Gera a lista de solicitações de exclusão na aba do Admin Mestre
+// Gera a lista de solicitações de exclusão na aba do Admin Mestre de forma blindada
 async function renderizarListaUsuariosPedidosExclusao() {
     const container = document.getElementById('admin-users-request-list');
     if (!container) return;
     container.innerHTML = "<p style='color:var(--text-gray); font-size:0.9rem;'>Buscando requisições no banco de dados...</p>";
     
     try {
-        const urlBaseBanco = firebaseConfig.databaseURL.replace(/\/$/, "");
-        let res = await fetch(`${urlBaseBanco}/usuarios.json`);
+        // Blindagem da URL: Remove qualquer subpasta ou barra para garantir que bate na raiz do Realtime Database
+        let urlRaizLimpa = firebaseConfig.databaseURL.replace(/\/$/, "");
+        
+        // Faz a busca mirando exatamente no nó geral de usuários
+        let res = await fetch(`${urlRaizLimpa}/usuarios.json`);
         let usuarios = await res.json();
         
         container.innerHTML = "";
@@ -925,6 +928,7 @@ async function renderizarListaUsuariosPedidosExclusao() {
         if (usuarios) {
             Object.keys(usuarios).forEach(uid => {
                 const userPerfil = usuarios[uid];
+                // Verifica se o usuário de fato marcou a opção de exclusão
                 if (userPerfil && userPerfil.solicitou_exclusao === true) {
                     encontrouNenhum = false;
                     
@@ -933,14 +937,15 @@ async function renderizarListaUsuariosPedidosExclusao() {
                     row.style.background = "rgba(231, 76, 60, 0.1)";
                     row.style.borderLeft = "4px solid #e74c3c";
                     row.style.padding = "10px";
+                    row.style.marginSub = "5px";
                     row.style.display = "flex";
                     row.style.justifyContent = "space-between";
                     row.style.alignItems = "center";
                     
                     row.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:2px;">
-                            <span style="color:#fff; font-weight:bold;">${userPerfil.nome || 'Sem Nome'} ${userPerfil.sobrenome || ''}</span>
-                            <span style="font-size:0.75rem; color:var(--text-gray); font-family:monospace; user-select:all;"><i class="fas fa-envelope"></i> ID/E-mail do Auth: ${uid}</span>
+                            <span style="color:#fff; font-weight:bold;">${userPerfil.nome || 'Usuário Sem Nome'} ${userPerfil.sobrenome || ''}</span>
+                            <span style="font-size:0.75rem; color:var(--text-gray); font-family:monospace; user-select:all;"><i class="fas fa-fingerprint"></i> UID: ${uid}</span>
                         </div>
                         <button class="crud-btn btn-del" onclick="processarExclusaoDefinitivaPeloMaster('${uid}')" style="padding:6px 12px; font-size:0.8rem;"><i class="fas fa-user-minus"></i> Limpar Banco</button>
                     `;
@@ -953,9 +958,11 @@ async function renderizarListaUsuariosPedidosExclusao() {
             container.innerHTML = "<p style='color:var(--text-gray); padding:10px; font-size:0.9rem;'>Nenhuma solicitação pendente no momento! Seu Firebase está limpo. ✨</p>";
         }
     } catch(err) {
-        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro ao carregar solicitações.</p>";
+        console.error("Erro na varredura administrativa:", err);
+        container.innerHTML = "<p style='color:#e74c3c; padding:10px;'>Erro de comunicação com o Realtime Database.</p>";
     }
 }
+
 
 // O Admin mestre limpa a pasta de dados do usuário rejeitado no banco
 async function processarExclusaoDefinitivaPeloMaster(uidUsuarioAlvo) {
