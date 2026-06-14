@@ -1040,6 +1040,28 @@ function setupEventListeners() {
                 });
         }
 
+                // 1. GATILHO PARA ABRIR/FECHAR O MENU DA ENGRENAGEM NO MOBILE
+        if (e.target.closest('#btn-trigger-dropdown-mobile')) {
+            e.stopPropagation();
+            document.getElementById('dropdown-menu-mobile')?.classList.toggle('hidden');
+        } else {
+            // Se clicar em qualquer outro lugar da tela, fecha o menu flutuante automaticamente
+            document.getElementById('dropdown-menu-mobile')?.classList.add('hidden');
+        }
+
+        // 2. AÇÃO DO BOTÃO ADMIN DE DENTRO DA ENGRENAGEM MOBILE
+        if (e.target.closest('#btn-open-admin-mobile')) {
+            document.getElementById('admin-modal')?.classList.remove('hidden'); 
+            switchTabs('add-tab', 'tab-trigger-add'); 
+            renderCrudManager();
+        }
+
+        // 3. AÇÃO DO BOTÃO SAIR DE DENTRO DA ENGRENAGEM MOBILE
+        if (e.target.closest('#btn-logout-mobile')) {
+            handleLogoutActions();
+        }
+
+        
         if (e.target.closest('#btn-open-admin')) { 
             document.getElementById('admin-modal')?.classList.remove('hidden'); 
             switchTabs('add-tab', 'tab-trigger-add'); renderCrudManager(); 
