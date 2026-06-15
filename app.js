@@ -43,7 +43,22 @@ let expandedCrudSubs = {};
 // Variável local para rastrear as mudanças temporárias de cor do perfil
 let corPerfilTemporaria = "";
 
-// Abre o modal de perfil e preenche os campos com os dados atuais salvos no banco
+// Validador de Provedores de E-mail Reais e Famosos
+function verificarProvedorValido(email) {
+    const provedoresPermitidos = [
+        'gmail.com', 
+        'outlook.com', 'outlook.com.br', 
+        'hotmail.com', 'hotmail.com.br', 
+        'live.com', 'live.com.br',
+        'yahoo.com', 'yahoo.com.br', 
+        'icloud.com', 
+        'uol.com.br', 'bol.com.br', 'ig.com.br'
+    ];
+    const dominio = email.split('@')[1];
+    return provedoresPermitidos.includes(dominio);
+}
+
+// Abre o modal de perfil e preenche os campos com os dados antigos salvos no banco
 async function abrirModalPerfil() {
     if (!currentUserUid) return;
     
@@ -65,10 +80,9 @@ async function abrirModalPerfil() {
             if(txtHexPerfil) txtHexPerfil.innerText = corPerfilTemporaria.toUpperCase();
             
             const selectorPerfil = document.getElementById('profile-color-spectrum-selector');
-            if(selectorPerfil) selectorPerfil.style.left = "50%"; // Posiciona no centro por padrão no carregamento
+            if(selectorPerfil) selectorPerfil.style.left = "50%"; 
         }
         
-        // Exibe o modal removendo a classe hidden
         document.getElementById('profile-modal')?.classList.remove('hidden');
     } catch (e) {
         console.error("Erro ao carregar dados do perfil para edição:", e);
@@ -80,18 +94,25 @@ function fecharModalPerfil() {
     document.getElementById('profile-modal')?.classList.add('hidden');
 }
 
-// Alterna visualmente entre os formulários de login e cadastro preservando a logo
+// Alterna visualmente entre os formulários de login, cadastro e recuperação preservando a logo
 function alternarAbasLogin(modo) {
     const formLogin = document.getElementById('form-login-fluxo');
     const formCadastro = document.getElementById('form-cadastro-fluxo');
+    const formRecuperar = document.getElementById('form-recuperar-fluxo');
     const titulo = document.getElementById('login-title');
     
+    // Oculta todas as abas por padrão para evitar sobreposição
+    formLogin.classList.add('hidden');
+    formCadastro.classList.add('hidden');
+    formRecuperar.classList.add('hidden');
+    
     if (modo === 'cadastro') {
-        formLogin.classList.add('hidden');
         formCadastro.classList.remove('hidden');
         titulo.innerText = "Criar Conta";
+    } else if (modo === 'recuperar') {
+        formRecuperar.classList.remove('hidden');
+        titulo.innerText = "Recuperar Senha";
     } else {
-        formCadastro.classList.add('hidden');
         formLogin.classList.remove('hidden');
         titulo.innerText = "StreamHub";
     }
@@ -114,7 +135,6 @@ function aplicarCorTema(hexColor) {
     let hexHover = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     document.documentElement.style.setProperty('--theme-color-hover', hexHover);
     
-    // Atualiza os textos de código hexadecimal tanto no Admin quanto no Perfil
     const txtHex = document.getElementById('theme-color-hex');
     if(txtHex) txtHex.innerText = hexColor.toUpperCase();
     
@@ -151,7 +171,6 @@ function checkSession() {
                 let resPerfil = await fetch(`${urlBaseBanco}/usuarios/${currentUserUid}.json`);
                 let perfil = await resPerfil.json();
                 
-                // Se o perfil não existir (Ex: Novo usuário via Google)
                 if (!perfil) {
                     let nomeCompleto = user.displayName || "Usuário";
                     let partesNome = nomeCompleto.split(" ");
@@ -168,16 +187,13 @@ function checkSession() {
                     await salvarPreferenciaNoFirebase(perfil);
                 }
                 
-                // Alimenta os parâmetros operacionais do app
                 CONFIG.FIREBASE_URL = perfil.firebaseUrl;
                 CONFIG.YT_API_KEY = YT_API_KEY_GLOBAL;
                 
-                // Aplica o visual salvo no banco de dados
                 aplicarCorTema(perfil.cor_tema || "#ff0000");
                 posicionarSetaPelaCor(perfil.cor_tema || "#ff0000");
                 document.body.className = perfil.tema || "";
                 
-                // EXIBE O NOME ELEGANTE NO TOPO DO SITE
                 if (perfil.nome && perfil.nome !== "Usuário") {
                     const elBadge = document.getElementById('user-profile-display');
                     const elTxt = document.getElementById('user-top-name');
@@ -186,7 +202,6 @@ function checkSession() {
                         elBadge.classList.remove('hidden');
                     }
                 } else {
-                    // AVISO DE NOVIDADE: Clicável para abrir o modal direto
                     if(!document.getElementById('alert-novidade-perfil')) {
                         const aviso = document.createElement('div');
                         aviso.className = 'alert-novidade-box';
@@ -212,8 +227,8 @@ function checkSession() {
             }
             
             document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden')
-                        // Libera ferramentas se logado com a conta mestre administrativa
+            document.getElementById('app-container').classList.remove('hidden');
+            
             const btnTabUsers = document.getElementById('tab-trigger-users');
             if (user.email === "admin@admin.com") {
                 btnTabUsers?.classList.remove('hidden');
@@ -231,10 +246,12 @@ function checkSession() {
 function configurarEventosLogin() {
     const inputUser = document.getElementById('login-user');
     const inputPass = document.getElementById('login-pass');
+    const inputRecover = document.getElementById('recover-email');
     const btnLogin = document.getElementById('btn-login');
 
     if (inputUser) { inputUser.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); if (inputPass) inputPass.focus(); } }; }
     if (inputPass) { inputPass.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handleLogin(); } }; }
+    if (inputRecover) { inputRecover.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); handlePasswordRecovery(); } }; }
     if (btnLogin) { btnLogin.onclick = (e) => { e.preventDefault(); handleLogin(); }; }
 }
 
@@ -256,6 +273,31 @@ function handleLogin() {
         });
 }
 
+// Dispara o e-mail nativo de redefinição de senha do Firebase Auth
+function handlePasswordRecovery() {
+    const elEmail = document.getElementById('recover-email');
+    if (!elEmail) return;
+    
+    const email = elEmail.value.trim().toLowerCase();
+    if (!email) return alert("Por favor, digite o seu e-mail cadastrado!");
+    
+    const btnRecover = document.getElementById('btn-recover-submit');
+    btnRecover.innerText = "Enviando link..."; btnRecover.disabled = true;
+    
+    firebase.auth().sendPasswordResetEmail(email)
+        .then(() => {
+            alert(`Link de redefinição enviado com sucesso para: ${email}\nVerifique a sua caixa de entrada ou spam!`);
+            document.getElementById('form-recuperar-fluxo').reset();
+            alternarAbasLogin('login'); // Retorna automaticamente para a tela de login
+        })
+        .catch((error) => {
+            alert("Erro ao solicitar link: " + error.message);
+        })
+        .finally(() => {
+            btnRecover.innerText = "Enviar Link de Recuperação"; btnRecover.disabled = false;
+        });
+}
+
 function handleLogoutActions() {
     firebase.auth().signOut().then(() => { limparInterfaceLocal(); });
 }
@@ -268,6 +310,7 @@ function limparInterfaceLocal() {
     if (document.getElementById('raw-player')) { document.getElementById('raw-player').pause(); document.getElementById('raw-player').src = ""; }
     if (document.getElementById('login-user')) document.getElementById('login-user').value = "";
     if (document.getElementById('login-pass')) document.getElementById('login-pass').value = "";
+    if (document.getElementById('recover-email')) document.getElementById('recover-email').value = "";
     if (document.getElementById('btn-login')) {
         document.getElementById('btn-login').innerText = "Entrar";
         document.getElementById('btn-login').disabled = false;
@@ -394,7 +437,6 @@ function renderMosaic() {
     }
 }
 
-// Alterna entre exibir o select de categorias existentes ou o input para nova categoria
 function alternarModoCategoriaCanal(modo) {
     const wrapExistente = document.getElementById('wrapper-channel-cat-existente');
     const wrapNova = document.getElementById('wrapper-channel-cat-nova');
@@ -547,7 +589,6 @@ async function peekPlaylistContents(playlistId) {
     } catch(e) { alert("Erro playlist."); }
 }
 
-// SALVA AS CONFIGURAÇÕES DE CORES DA PALETA GERAL OU DO PERFIL
 function inicializarSeletorCoresLinear() {
     const barAdmin = document.getElementById('color-spectrum-bar'); 
     const selectorAdmin = document.getElementById('color-spectrum-selector');
@@ -585,18 +626,15 @@ function inicializarSeletorCoresLinear() {
         let hexResult = rgbToHex(r, g, b); 
         
         if (ehPerfil) {
-            // No perfil, guarda na variável para salvar apenas quando clicar em concluir
             corPerfilTemporaria = hexResult;
             const txtHexPerfil = document.getElementById('profile-theme-color-hex');
             if (txtHexPerfil) txtHexPerfil.innerText = hexResult.toUpperCase();
         } else {
-            // No Admin, altera direto e já grava em nuvem em tempo real
             aplicarCorTema(hexResult); 
             salvarPreferenciaNoFirebase({ cor_tema: hexResult });
         }
     }
 
-    // Configuração de Eventos para o Painel Admin original
     if (barAdmin) {
         barAdmin.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); });
         document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); });
@@ -604,7 +642,6 @@ function inicializarSeletorCoresLinear() {
         document.addEventListener('touchmove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barAdmin, selectorAdmin, false); }, {passive: true});
     }
 
-    // Configuração de Eventos Exclusivos para a barra do Perfil de Usuário
     if (barPerfil) {
         barPerfil.addEventListener('mousedown', (e) => { isDragging = true; calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); });
         document.addEventListener('mousemove', (e) => { if (isDragging) calcularCorPelaPosicao(e, barPerfil, selectorPerfil, true); });
@@ -908,12 +945,10 @@ function switchTabs(targetTabId, activeTriggerBtnId) {
     if (targetTab) targetTab.classList.remove('hidden');
 }
 
-// Gera a lista de solicitações de exclusão na aba do Admin Mestre (Versão de Diagnóstico Forçado)
 async function renderizarListaUsuariosPedidosExclusao() {
     const container = document.getElementById('admin-users-request-list');
     if (!container) return;
     
-    // Força um estado inicial visível para sabermos que a função foi chamada
     container.innerHTML = "<p style='color:var(--text-gray); font-size:0.9rem;'><i class='fas fa-spinner fa-spin'></i> Carregando dados do nó /usuarios...</p>";
     
     try {
@@ -926,14 +961,11 @@ async function renderizarListaUsuariosPedidosExclusao() {
         }
         
         let data = await res.json();
-        
-        // Se o banco retornar totalmente vazio na raiz
         if (!data) {
             container.innerHTML = "<p style='color:var(--text-gray); padding:10px; font-size:0.9rem;'>Nenhum registro encontrado no nó /usuarios. O banco está vazio. ✨</p>";
             return;
         }
 
-        // Caso o Firebase retorne um array com itens nulos (comum se deletar IDs sequenciais)
         let usuariosObjeto = {};
         if (Array.isArray(data)) {
             data.forEach((item, index) => { if (item) usuariosObjeto[index] = item; });
@@ -941,17 +973,14 @@ async function renderizarListaUsuariosPedidosExclusao() {
             usuariosObjeto = data;
         }
         
-        container.innerHTML = ""; // Limpa o carregando
+        container.innerHTML = ""; 
         let encontrouNenhum = true;
         
         Object.keys(usuariosObjeto).forEach(uid => {
             try {
                 const userPerfil = usuariosObjeto[uid];
-                
-                // Pula se o perfil estiver corrompido ou nulo no banco
                 if (!userPerfil || typeof userPerfil !== 'object') return;
                 
-                // Captura se a propriedade existir de qualquer forma (booleano ou texto)
                 const pediuExclusao = userPerfil.solicitou_exclusao === true || 
                                      userPerfil.solicitou_exclusao === "true" ||
                                      userPerfil.solicitouExclusao === true || 
@@ -995,11 +1024,6 @@ async function renderizarListaUsuariosPedidosExclusao() {
     }
 }
 
-
-
-
-
-// O Admin mestre limpa a pasta de dados do usuário rejeitado no banco
 async function processarExclusaoDefinitivaPeloMaster(uidUsuarioAlvo) {
     if (!confirm("Atenção Admin: Deseja apagar permanentemente todas as mídias e preferências deste usuário do banco? (Lembre-se de deletar a credencial dele no painel Firebase Auth)")) return;
     
@@ -1012,7 +1036,6 @@ async function processarExclusaoDefinitivaPeloMaster(uidUsuarioAlvo) {
         alert("Erro técnico ao limpar nó do usuário.");
     }
 }
-
 
 function setupEventListeners() {
     console.log("Configurando Delegação de Eventos...");
@@ -1040,27 +1063,22 @@ function setupEventListeners() {
                 });
         }
 
-                // 1. GATILHO PARA ABRIR/FECHAR O MENU DA ENGRENAGEM NO MOBILE
         if (e.target.closest('#btn-trigger-dropdown-mobile')) {
             e.stopPropagation();
             document.getElementById('dropdown-menu-mobile')?.classList.toggle('hidden');
         } else {
-            // Se clicar em qualquer outro lugar da tela, fecha o menu flutuante automaticamente
             document.getElementById('dropdown-menu-mobile')?.classList.add('hidden');
         }
 
-        // 2. AÇÃO DO BOTÃO ADMIN DE DENTRO DA ENGRENAGEM MOBILE
         if (e.target.closest('#btn-open-admin-mobile')) {
             document.getElementById('admin-modal')?.classList.remove('hidden'); 
             switchTabs('add-tab', 'tab-trigger-add'); 
             renderCrudManager();
         }
 
-        // 3. AÇÃO DO BOTÃO SAIR DE DENTRO DA ENGRENAGEM MOBILE
         if (e.target.closest('#btn-logout-mobile')) {
             handleLogoutActions();
         }
-
         
         if (e.target.closest('#btn-open-admin')) { 
             document.getElementById('admin-modal')?.classList.remove('hidden'); 
@@ -1122,7 +1140,6 @@ function setupEventListeners() {
             }
         }
 
-                // USUÁRIO COMUM SOLICITA EXCLUSÃO DE CONTA
         if (e.target.closest('#btn-request-delete-account')) {
             e.preventDefault();
             if (!confirm("Tem certeza absoluta de que deseja solicitar a exclusão da sua conta? Seu acervo e preferências serão agendados para eliminação pelo administrador.")) return;
@@ -1135,7 +1152,6 @@ function setupEventListeners() {
                 alert("Falha ao registrar pedido.");
             }
         }
-
         
         if (e.target.closest('#btn-fetch-manual')) {
             const url = document.getElementById('manual-media-url').value.trim(); if(!url) return alert("Insira uma URL.");
@@ -1154,7 +1170,6 @@ function setupEventListeners() {
             try { let p = JSON.parse(val); await processarInjecaoDeDadosAcumulativa(Array.isArray(p) ? p : Object.values(p)); document.getElementById('json-input-field').value = ""; } catch(err) { alert("JSON inválido."); }
         }
         
-        // Clique do botão de reset do tema Admin clássico
         if (e.target.closest('#btn-reset-theme')) {
             if(currentUserUid) {
                 let padrao = { cor_tema: "#ff0000" };
@@ -1163,7 +1178,6 @@ function setupEventListeners() {
             }
         }
 
-        // --- CORREÇÃO: Clique do botão de reset de tema DENTRO DO PERFIL ---
         if (e.target.closest('#profile-btn-reset-theme')) {
             corPerfilTemporaria = "#ff0000";
             aplicarCorTema("#ff0000");
@@ -1184,7 +1198,6 @@ function setupEventListeners() {
             aplicarVolume();
         }
 
-        // Cliques dos botões flutuantes de temas originais (Switch do canto direito)
         const themeBtn = e.target.closest('[id^="theme-switch-"]');
         if (themeBtn) {
             const tema = themeBtn.id.replace('theme-switch-', '');
@@ -1193,29 +1206,30 @@ function setupEventListeners() {
             salvarPreferenciaNoFirebase({ tema: className });
         }
 
-        // --- CORREÇÃO: Cliques nos seletores de temas DENTRO DO MODAL PERFIL ---
         const profileThemeBtn = e.target.closest('.profile-theme-btn');
         if (profileThemeBtn) {
             const temaSelecionado = profileThemeBtn.getAttribute('data-theme');
             const className = temaSelecionado === 'youtube' ? "" : `theme-${temaSelecionado}`;
             document.body.className = className;
-            // Grava o tema imediatamente na tela para feedback visual e prepara para o payload
             profileThemeBtn.parentElement.querySelectorAll('.profile-theme-btn').forEach(btn => btn.classList.remove('active'));
             profileThemeBtn.classList.add('active');
         }
+
+        // DISPARO DA REQUISIÇÃO DE RECUPERAÇÃO DE SENHA
+        if (e.target.closest('#btn-recover-submit')) {
+            e.preventDefault();
+            handlePasswordRecovery();
+        }
     });
 
-    // SALVAR ALTERAÇÕES DE NOME, SOBRENOME, COR E TEMA DO PERFIL COMPLETO
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#btn-save-profile-changes')) {
             e.preventDefault();
             
             const novoNome = document.getElementById('profile-edit-name').value.trim();
             const novoSobrenome = document.getElementById('profile-edit-lastname').value.trim();
-            
-            // Verifica qual o botão de tema ativo dentro do modal de perfil
             const btnTemaAtivo = document.querySelector('.profile-theme-btn.active');
-            let temaFinal = document.body.className; // Pega o estado atual do body como fallback
+            let temaFinal = document.body.className; 
             
             if (btnTemaAtivo) {
                 const dataTheme = btnTemaAtivo.getAttribute('data-theme');
@@ -1230,7 +1244,6 @@ function setupEventListeners() {
             btnSaveProf.innerText = "Salvando..."; btnSaveProf.disabled = true;
             
             try {
-                // Monta o payload de atualização robusto (Unifica Nome, Sobrenome, Cor e Tema de Fundo)
                 const dadosAtualizados = {
                     nome: novoNome,
                     sobrenome: novoSobrenome,
@@ -1238,10 +1251,7 @@ function setupEventListeners() {
                     tema: temaFinal
                 };
                 
-                // Salva tudo de uma vez só na nuvem
                 await salvarPreferenciaNoFirebase(dadosAtualizados);
-                
-                // Atualiza em tempo real as variáveis ativas na tela
                 aplicarCorTema(dadosAtualizados.cor_tema);
                 document.body.className = dadosAtualizados.tema;
                 
@@ -1314,7 +1324,7 @@ function setupEventListeners() {
         }
     });
 
-    // PROCESSAMENTO DO CADASTRO COMPLETO DE USUÁRIOS
+    // PROCESSAMENTO DO CADASTRO COMPLETO DE USUÁRIOS COM FILTRO DE PROVEDOR REAL
     document.addEventListener('click', async (e) => {
         if (e.target.closest('#btn-register-submit')) {
             e.preventDefault();
@@ -1328,6 +1338,12 @@ function setupEventListeners() {
             if(!nome || !sobrenome || !email || !senha) {
                 return alert("Por favor, preencha todos os campos do cadastro!");
             }
+            
+            // TRAVA DE PROVEDOR REAL: Aplica a validação do front-end
+            if (!verificarProvedorValido(email)) {
+                return alert("Cadastro Bloqueado!\nPor razões de segurança e viabilidade de recuperação de senha, use um e-mail válido pertencente aos grandes provedores (Gmail, Hotmail, Outlook, Yahoo, iCloud, UOL, BOL ou IG).");
+            }
+
             if(senha.length < 6) {
                 return alert("A senha precisa ter no mínimo 6 caracteres!");
             }
