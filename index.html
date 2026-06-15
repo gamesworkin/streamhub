@@ -26,10 +26,15 @@
                     <i class="fas fa-envelope"></i>
                     <input type="email" id="login-user" placeholder="E-mail" required>
                 </div>
-                <div class="input-group">
+                <div class="input-group" style="margin-bottom: 10px;">
                     <i class="fas fa-lock"></i>
                     <input type="password" id="login-pass" placeholder="Senha" required>
                 </div>
+                
+                <div style="text-align: right; margin-bottom: 20px;">
+                    <a href="#" onclick="alternarAbasLogin('recuperar')" style="color: var(--text-gray); font-size: 0.8rem; text-decoration: none; font-weight: 500;">Esqueceu sua senha?</a>
+                </div>
+
                 <button type="button" id="btn-login" class="btn-primary">Entrar</button>
                 
                 <div style="margin: 15px 0; text-align: center; color: var(--text-gray); font-size: 0.9rem;">ou</div>
@@ -70,6 +75,22 @@
                     Já tem uma conta? <a href="#" onclick="alternarAbasLogin('login')" style="color: var(--theme-color); font-weight: bold; text-decoration: none;">Faça Login</a>
                 </p>
             </form>
+
+            <form id="form-recuperar-fluxo" class="hidden">
+                <p style="color: var(--text-gray); font-size: 0.85rem; text-align: center; margin-bottom: 20px; line-height: 1.3rem;">
+                    Insira o seu e-mail cadastrado abaixo para receber um link seguro de redefinição de senha.
+                </p>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="recover-email" placeholder="E-mail Cadastrado" required>
+                </div>
+                <button type="button" id="btn-recover-submit" class="btn-primary" style="margin-bottom: 15px;">Enviar Link de Recuperação</button>
+
+                <p class="toggle-login-p" style="margin-top: 10px; text-align: center; font-size: 0.9rem; color: #fff;">
+                    Lembrou a senha? <a href="#" onclick="alternarAbasLogin('login')" style="color: var(--theme-color); font-weight: bold; text-decoration: none;">Voltar ao Login</a>
+                </p>
+            </form>
+
         </div>
     </div>
 
@@ -93,11 +114,11 @@
                 <span id="user-top-name">Olá!</span>
             </div>
 
-                <div class="header-right">
+            <div class="header-right">
                 <button id="btn-toggle-search-mobile" class="btn-icon btn-mobile-only" title="Pesquisar"><i class="fas fa-search"></i></button>
                 
                 <button id="btn-open-admin" class="btn-admin btn-desktop-only" title="Administração"><i class="fas fa-cog"></i> Admin</button>
-                <button id="btn-logout" class="btn-logout btn-desktop-only" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
+                <button id="btn-logout" class="btn-logout" title="Sair"><i class="fas fa-sign-out-alt"></i></button>
                 
                 <div class="admin-dropdown-wrapper btn-mobile-only">
                     <button id="btn-trigger-dropdown-mobile" class="btn-icon" title="Opções" style="font-size: 1.3rem; color: var(--theme-color);"><i class="fas fa-cog"></i></button>
@@ -109,7 +130,6 @@
                     </div>
                 </div>
             </div>
-
         </header>
 
         <div id="mobile-search-row" class="mobile-search-container hidden">
@@ -296,7 +316,7 @@
                     <h3 style="color: var(--theme-color); margin-bottom: 10px;"><i class="fas fa-shield-alt"></i> Controle de Contas Solicitadas</h3>
                     <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 15px;">Abaixo estão listados os usuários que pediram a exclusão de suas contas. Ao clicar em "Limpar Banco", os dados do Realtime Database serão apagados. Copie o e-mail para removê-lo manualmente do Auth.</p> 
                     <div id="admin-users-request-list" style="flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 200px; max-height: 380px; overflow-y: auto; background: var(--bg-main); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); -webkit-overflow-scrolling: touch;">
-                        </div>
+                    </div>
                 </div>
 
             </div>
