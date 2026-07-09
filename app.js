@@ -12,7 +12,7 @@ const firebaseConfig = {
 };
 
 // CHAVE DE API GLOBAL DO YOUTUBE (PROTEGIDA POR RESTRIÇÃO DE DOMÍNIO HTTP)
-const YT_API_KEY_GLOBAL = "AIzaSyATXiihPhDZohvy8mJKsAk8vjZ4WkPekmQ";
+const YT_API_KEY_GLOBAL = "AIzaSyDHkLh2vGgxUJpVo11o1kKqtH1DQ5Toeu4";
 
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
