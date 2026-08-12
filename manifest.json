@@ -1,8 +1,8 @@
 {
-  "name": "Workin'Store - Sistema Gerencial",
-  "short_name": "WorkinStore",
-  "start_url": "/admin/",
-  "scope": "/admin/",
+  "name": "Streamhub by Di Workin'",
+  "short_name": "Streamhub",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b0e14",
   "theme_color": "#0b0e14",
